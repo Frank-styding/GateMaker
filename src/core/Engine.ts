@@ -1,15 +1,15 @@
-import { Display } from "./Display";
+import { RenderLayer } from "./RenderLayer";
 import { Entity } from "./Entity";
 import { MouseController } from "./MouseController";
 import { Vector2D } from "./Vector";
 
 export class Engine {
-  private display!: Display;
+  private display!: RenderLayer;
   private mouse!: MouseController;
   private root!: Entity;
 
   constructor() {
-    this.display = new Display();
+    this.display = new RenderLayer();
     this.mouse = new MouseController(this.display.getCanvas());
     this.root = new Entity(); // root
     this.initEvents();
@@ -23,19 +23,37 @@ export class Engine {
     this.mouse.on("wheel", (e) => {
       this.display.onZoom(e);
     });
+    let hits: Entity[];
 
     this.mouse.on("down", (e) => {
       const mousePos = this.display.screenToWorld(e.x, e.y);
       const p = new Vector2D(mousePos.x, mousePos.y);
-      const hits: Entity[] = [];
-      Entity.traveler(this.root.getChildren(), (e) => {
-        if (e._mouseIsInside(p)) {
-          hits.push(e);
-          return true;
-        } else {
-          return false;
-        }
-      });
+
+      hits = Entity.traveler(this.root.getChildren(), (e) =>
+        e.getAABB().mouseIsInside(p)
+      ).filter((item) => item.getCollider()?.mouseIsInside(p));
+
+      hits.map((item) => item._mouseDown(p));
+    });
+
+    this.mouse.on("up", (e) => {
+      const mousePos = this.display.screenToWorld(e.x, e.y);
+      const p = new Vector2D(mousePos.x, mousePos.y);
+      hits.map((item) => item._mouseUp(p));
+    });
+
+    //this.mouse.on("move", (e) => {
+    //  const mousePos = this.display.screenToWorld(e.x, e.y);
+    //  const p = new Vector2D(mousePos.x, mousePos.y);
+    //  hits.map((item) => item._mouseMove(p));
+    //});
+    this.mouse.on("click", (e) => {
+      const mousePos = this.display.screenToWorld(e.x, e.y);
+      const p = new Vector2D(mousePos.x, mousePos.y);
+      hits = Entity.traveler(this.root.getChildren(), (e) =>
+        e.getAABB().mouseIsInside(p)
+      ).filter((item) => item.getCollider()?.mouseIsInside(p));
+      hits.map((item) => item._mouseClick(p));
     });
   }
 

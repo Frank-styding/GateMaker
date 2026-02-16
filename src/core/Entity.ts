@@ -24,21 +24,40 @@ export class Entity {
     this.dirtyLayout = true;
   }
 
-  _mouseIsInside(pos: Vector2D): boolean {
-    if (!this.collider) return false;
-    const value = this.collider.mouseIsInside(pos);
-    if (value) this.mouseIsInside(pos);
-    return value;
+  //public _isMouseInside(pos: Vector2D): boolean {
+  //  if (!this.collider) return false;
+  //  return this.collider.mouseIsInside(pos);
+  //}
+
+  public getCollider(): Collider | undefined {
+    return this.collider;
+  }
+  public getAABB(): AABB {
+    return this.bounding;
   }
 
-  addChild(entity: Entity) {
+  public _mouseUp(pos: Vector2D): void {
+    this.onMouseUp(pos);
+  }
+  public _mouseDown(pos: Vector2D): void {
+    this.onMouseDown(pos);
+  }
+  public _mouseMove(pos: Vector2D): void {
+    this.onMouseMove(pos);
+  }
+  public _mouseClick(pos: Vector2D): void {
+    this.onMouseClick(pos);
+  }
+
+  public addChild(entity: Entity): this {
     entity.parent = this;
     this.children.push(entity);
     return this;
   }
-  protected mouseIsInside(pos: Vector2D): boolean {
-    return false;
-  }
+  protected onMouseDown(pos: Vector2D) {}
+  protected onMouseUp(pos: Vector2D) {}
+  protected onMouseClick(pos: Vector2D) {}
+  protected onMouseMove(pos: Vector2D) {}
   protected start() {}
   protected update() {}
   protected updateCollider() {}
@@ -47,26 +66,26 @@ export class Entity {
     this.bounding = Entity.calcBounding(this);
   }
 
-  getChildren() {
+  public getChildren(): Entity[] {
     return this.children;
   }
 
-  markDirty() {
+  public markDirty(): void {
     this.dirtyLayout = true;
     this.parent?.markDirty();
   }
 
-  _draw(ctx: CanvasRenderingContext2D) {
+  public _draw(ctx: CanvasRenderingContext2D): void {
     const { pos, width, height } = this.bounding;
     ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
     this.draw(ctx);
   }
 
-  _update() {
+  public _update(): void {
     this.update();
   }
 
-  _updateLayout() {
+  public _updateLayout(): void {
     if (this.dirtyLayout) {
       this.updateCollider();
       this.updateBounding();
@@ -74,7 +93,7 @@ export class Entity {
     }
   }
 
-  _start() {
+  public _start(): void {
     if (this.isStarted) return;
     this.start();
     this.isStarted = true;
@@ -82,7 +101,7 @@ export class Entity {
 
   static traveler(
     entity: Entity | Entity[],
-    func?: (item: Entity) => void | boolean,
+    func?: (item: Entity) => void | boolean
   ) {
     const l: Entity[] = [];
     const l1: Entity[] = [];
@@ -95,10 +114,9 @@ export class Entity {
       const item = l.shift();
       if (!item) continue;
       const value = func?.(item);
+      if (value == false) continue;
       l1.push(item);
-      if (value != false) {
-        item.children.forEach((sub) => l.push(sub));
-      }
+      item.children.forEach((sub) => l.push(sub));
     }
     return l1;
   }
@@ -124,7 +142,7 @@ export class Entity {
     return new AABB(
       maxX - minX,
       maxY - minY,
-      new Vector2D((minX + maxX) / 2, (minY + maxY) / 2),
+      new Vector2D((minX + maxX) / 2, (minY + maxY) / 2)
     );
   }
 }

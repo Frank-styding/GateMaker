@@ -1,6 +1,10 @@
 import type { MouseData } from "./MouseController";
 
-export class Display {
+interface RenderLayerProps {
+  fullScreen?: boolean;
+  custom?: { width: number; height: number };
+}
+export class RenderLayer {
   //* canvas
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
@@ -13,17 +17,24 @@ export class Display {
   private panY: number = 0;
   private zoom: number = 1;
 
-  constructor() {
+  constructor(private props: RenderLayerProps = { fullScreen: true }) {
     this.canvas = document.createElement("canvas");
     this.ctx = this.canvas.getContext("2d")!;
-    this.resize();
+    if (this.props.fullScreen) {
+      this.resize(innerWidth - 4, innerHeight - 4);
+    }
+    if (this.props.custom) {
+      this.width = this.props.custom.width;
+      this.height = this.props.custom.height;
+      this.resize(this.width, this.height);
+    }
   }
 
-  private resize() {
+  public resize(width: number, height: number) {
     const dpr = window.devicePixelRatio || 1;
 
-    this.width = innerWidth - 4;
-    this.height = innerHeight - 4;
+    this.width = width;
+    this.height = height;
 
     this.canvas.width = this.width * dpr;
     this.canvas.height = this.height * dpr;
@@ -36,21 +47,22 @@ export class Display {
 
   public initResize() {
     window.addEventListener("resize", () => {
-      this.resize();
+      this.resize(innerWidth - 4, innerHeight - 4);
     });
   }
 
-  public initDisplay() {
+  public initDisplay(transform: boolean = true) {
     const dpr = window.devicePixelRatio || 1;
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (transform) this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.ctx.setTransform(
-      new DOMMatrix()
-        .scale(dpr, dpr)
-        .translate(this.panX, this.panY)
-        .scale(this.zoom),
-    );
+    if (transform)
+      this.ctx.setTransform(
+        new DOMMatrix()
+          .scale(dpr, dpr)
+          .translate(this.panX, this.panY)
+          .scale(this.zoom)
+      );
   }
 
   public screenToWorld(x: number, y: number): MouseData {
