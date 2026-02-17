@@ -9,11 +9,10 @@ export class Entity {
   protected collider?: Collider;
   protected bounding: AABB;
   private dirtyLayout;
-
   private parent?: Entity;
-
   private isStarted = false;
 
+  public debugMode = true;
   pos: Vector2D;
 
   constructor() {
@@ -23,11 +22,6 @@ export class Entity {
     this.bounding = new AABB();
     this.dirtyLayout = true;
   }
-
-  //public _isMouseInside(pos: Vector2D): boolean {
-  //  if (!this.collider) return false;
-  //  return this.collider.mouseIsInside(pos);
-  //}
 
   public getCollider(): Collider | undefined {
     return this.collider;
@@ -52,8 +46,10 @@ export class Entity {
   public addChild(entity: Entity): this {
     entity.parent = this;
     this.children.push(entity);
+    this.markDirty();
     return this;
   }
+
   protected onMouseDown(pos: Vector2D) {}
   protected onMouseUp(pos: Vector2D) {}
   protected onMouseClick(pos: Vector2D) {}
@@ -62,6 +58,7 @@ export class Entity {
   protected update() {}
   protected updateCollider() {}
   protected draw(ctx: CanvasRenderingContext2D) {}
+
   protected updateBounding() {
     this.bounding = Entity.calcBounding(this);
   }
@@ -71,13 +68,17 @@ export class Entity {
   }
 
   public markDirty(): void {
+    if (this.dirtyLayout) return;
     this.dirtyLayout = true;
     this.parent?.markDirty();
   }
 
   public _draw(ctx: CanvasRenderingContext2D): void {
-    const { pos, width, height } = this.bounding;
-    ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
+    if (this.debugMode) {
+      const { pos, width, height } = this.bounding;
+      ctx.strokeStyle = "red"; // Color visible
+      ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
+    }
     this.draw(ctx);
   }
 
@@ -101,48 +102,68 @@ export class Entity {
 
   static traveler(
     entity: Entity | Entity[],
-    func?: (item: Entity) => void | boolean
+    {
+      func,
+      reverse = false,
+    }: {
+      func?: (item: Entity) => void | boolean;
+      reverse?: boolean;
+    } = {},
   ) {
-    const l: Entity[] = [];
-    const l1: Entity[] = [];
-    if (!Array.isArray(entity)) {
-      l.push(entity);
+    const stack: Entity[] = [];
+    const result: Entity[] = [];
+    if (Array.isArray(entity)) {
+      for (let i = entity.length - 1; i >= 0; i--) {
+        stack.push(entity[i]);
+      }
     } else {
-      l.push(...entity);
+      stack.push(entity);
     }
-    while (l.length > 0) {
-      const item = l.shift();
-      if (!item) continue;
-      const value = func?.(item);
-      if (value == false) continue;
-      l1.push(item);
-      item.children.forEach((sub) => l.push(sub));
+    while (stack.length > 0) {
+      const item = stack.pop()!;
+      if (func) if (func(item) === false) continue;
+      if (reverse) {
+        result.unshift(item);
+      } else {
+        result.push(item);
+      }
+      const children = item.getChildren();
+      if (children && children.length > 0) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          stack.push(children[i]);
+        }
+      }
     }
-    return l1;
+    return result;
   }
 
   static calcBounding(entity: Entity) {
-    const l = [...entity.children];
-    let i = 0;
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
-    while (i < l.length) {
-      const item = l[i++];
-      const b = item.bounding;
+    const children = entity.children;
 
-      minX = Math.min(minX, b.left);
-      minY = Math.min(minY, b.top);
-      maxX = Math.max(maxX, b.right);
-      maxY = Math.max(maxY, b.bottom);
-      l.push(...item.children);
+    if (children.length === 0) {
+      return new AABB(0, 0, entity.pos);
     }
-    if (minX === Infinity) return new AABB(0, 0, entity.pos);
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (let i = 0; i < children.length; i++) {
+      const b = children[i].bounding;
+      if (b.left < minX) minX = b.left;
+      if (b.top < minY) minY = b.top;
+      if (b.right > maxX) maxX = b.right;
+      if (b.bottom > maxY) maxY = b.bottom;
+    }
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
     return new AABB(
-      maxX - minX,
-      maxY - minY,
-      new Vector2D((minX + maxX) / 2, (minY + maxY) / 2)
+      width,
+      height,
+      new Vector2D(minX + width / 2, minY + height / 2),
     );
   }
 }
