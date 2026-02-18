@@ -1,27 +1,40 @@
 import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
 
-type NodeConnector = {
+export type NodeDirection = "left" | "top" | "right" | "bottom";
+
+export type NodeConnector = {
   name: string;
-  direction: "left" | "top" | "right" | "bottom";
+  direction: NodeDirection;
   idx: number;
 };
 
+export interface NodeDefinition {
+  name: string;
+  cell_w: number;
+  cell_h: number;
+  connectors: NodeConnector[];
+}
+
 export class $$Node extends Entity {
+  // Grid system
   static CELL_SIZE = 50;
+
+  // Connector size
   static CONNECTION_WIDTH = 12.5;
   static CONNECTION_HEIGHT = 25;
+  static PIN_MARGIN = 2;
 
+  // Node data
   public cell_w!: number;
   public cell_h!: number;
-
   public width!: number;
   public height!: number;
   public nodeWidth!: number;
   public nodeHeight!: number;
-
   public node_name!: string;
   public connectors: NodeConnector[] = [];
   private layer!: HTMLCanvasElement;
+  private layerDirty = true;
 
   protected updateBounding(): void {
     this.bounding.width = this.width;
