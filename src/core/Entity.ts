@@ -54,7 +54,7 @@ export class Entity {
   protected onMouseUp(pos: Vector2D) {}
   protected onMouseClick(pos: Vector2D) {}
   protected onMouseMove(pos: Vector2D) {}
-  protected start() {}
+  protected init() {}
   protected update() {}
   protected updateCollider() {}
   protected draw(ctx: CanvasRenderingContext2D) {}
@@ -74,12 +74,19 @@ export class Entity {
   }
 
   public _draw(ctx: CanvasRenderingContext2D): void {
+    this.draw(ctx);
+    ctx.save();
     if (this.debugMode) {
       const { pos, width, height } = this.bounding;
+      ctx.lineWidth = 2;
       ctx.strokeStyle = "red"; // Color visible
       ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
+      if (this.collider) {
+        ctx.strokeStyle = "green";
+        this.collider.draw(ctx);
+      }
     }
-    this.draw(ctx);
+    ctx.restore();
   }
 
   public _update(): void {
@@ -94,9 +101,9 @@ export class Entity {
     }
   }
 
-  public _start(): void {
+  public _init(): void {
     if (this.isStarted) return;
-    this.start();
+    this.init();
     this.isStarted = true;
   }
 

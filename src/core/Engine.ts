@@ -12,14 +12,14 @@ export class Engine {
     this.display = new RenderLayer();
     this.mouse = new MouseController(this.display.getCanvas());
     this.root = new Entity();
+    this.init();
     this.initEvents();
   }
-
+  protected init() {}
   protected initEvents() {
     //this.mouse.on("drag", (e) => {
     //  this.display.onDrag(e);
     //});
-    //
     //this.mouse.on("wheel", (e) => {
     //  this.display.onZoom(e);
     //});
@@ -71,14 +71,14 @@ export class Engine {
 
     const loop = () => {
       let l = Entity.traveler(this.root);
-      l.map((item) => item._start());
+      l.map((item) => item._init());
       this.display.initDisplay();
+      this.draw(ctx);
       const rev = l.slice().reverse();
       rev.forEach((item) => item._updateLayout());
       l.forEach((item) => item._update());
       this.update();
       l.forEach((item) => item._draw(ctx));
-      this.draw(ctx);
       requestAnimationFrame(loop);
     };
     loop();

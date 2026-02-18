@@ -8,14 +8,18 @@ export class RenderLayer {
   //* canvas
   private canvas!: HTMLCanvasElement;
   private ctx!: CanvasRenderingContext2D;
-  private width!: number;
-  private height!: number;
+  width!: number;
+  height!: number;
 
   //* transform
 
-  private panX: number = 0;
-  private panY: number = 0;
-  private zoom: number = 1;
+  panX: number = 0;
+  panY: number = 0;
+  zoom: number = 1;
+  minZoom: number = 0;
+  maxZoom: number = 1;
+
+  pattern: CanvasPattern | null = null;
 
   constructor(private props: RenderLayerProps = { fullScreen: true }) {
     this.canvas = document.createElement("canvas");
@@ -28,6 +32,12 @@ export class RenderLayer {
       this.height = this.props.custom.height;
       this.resize(this.width, this.height);
     }
+    //this.createGridPattern();
+  }
+
+  public setZoomLimits(min: number, max: number) {
+    this.minZoom = min;
+    this.maxZoom = max;
   }
 
   public resize(width: number, height: number) {
@@ -45,6 +55,10 @@ export class RenderLayer {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
+  public setPattern(pattern: CanvasPattern) {
+    this.pattern = pattern;
+  }
+
   public initResize() {
     window.addEventListener("resize", () => {
       this.resize(innerWidth - 4, innerHeight - 4);
@@ -56,19 +70,35 @@ export class RenderLayer {
     if (transform) this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    if (transform)
-      this.ctx.setTransform(
-        new DOMMatrix()
-          .scale(dpr, dpr)
-          .translate(this.panX, this.panY)
-          .scale(this.zoom)
-      );
+    if (transform) {
+      const matrix = new DOMMatrix()
+        .scale(dpr, dpr)
+        .translate(this.panX, this.panY)
+        .scale(this.zoom);
+      this.ctx.setTransform(matrix);
+    }
+  }
+
+  public drawGrid() {
+    if (!this.pattern) return;
+    const dpr = window.devicePixelRatio || 1;
+    this.ctx.save();
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const matrix = new DOMMatrix()
+      .scale(dpr, dpr)
+      .translate(this.panX, this.panY)
+      .scale(this.zoom);
+    this.pattern.setTransform(matrix);
+    this.ctx.fillStyle = this.pattern;
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.restore();
   }
 
   public screenToWorld(x: number, y: number): MouseData {
+    const dpr = window.devicePixelRatio || 1;
     return {
-      x: (x - this.panX) / this.zoom,
-      y: (y - this.panY) / this.zoom,
+      x: (x / dpr - this.panX) / this.zoom,
+      y: (y / dpr - this.panY) / this.zoom,
     };
   }
 
@@ -86,9 +116,12 @@ export class RenderLayer {
     const mouseX = mouseEvent.x!;
     const mouseY = mouseEvent.y!;
     const worldBefore = this.screenToWorld(mouseX, mouseY);
-    this.zoom *= zoomFactor;
-    this.panX = mouseX - worldBefore.x * this.zoom;
-    this.panY = mouseY - worldBefore.y * this.zoom;
+    const newZoom = this.zoom * zoomFactor;
+    if (this.minZoom < newZoom && newZoom < this.maxZoom) {
+      this.zoom *= zoomFactor;
+      this.panX = mouseX - worldBefore.x * this.zoom;
+      this.panY = mouseY - worldBefore.y * this.zoom;
+    }
   }
 
   public getContext() {

@@ -2,6 +2,7 @@ import { Vector2D } from "./Vector";
 
 export interface Collider {
   mouseIsInside(pos: Vector2D): boolean;
+  draw(ctx: CanvasRenderingContext2D): void;
 }
 
 export class BoxCollider implements Collider {
@@ -15,6 +16,14 @@ export class BoxCollider implements Collider {
   ) {
     this.halfW = width / 2;
     this.halfH = height / 2;
+  }
+  draw(ctx: CanvasRenderingContext2D): void {
+    ctx.strokeRect(
+      this.center.x - this.halfW,
+      this.center.y - this.halfH,
+      this.width,
+      this.height,
+    );
   }
 
   updateData(width: number, height: number, pos: Vector2D, angle: number = 0) {
@@ -42,6 +51,9 @@ export class LineCollider implements Collider {
     public path: Vector2D[] = [],
     public height: number,
   ) {}
+  draw(ctx: CanvasRenderingContext2D): void {
+    throw new Error("Method not implemented.");
+  }
 
   updateData(path: Vector2D[], height?: number) {
     this.path = path;

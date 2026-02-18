@@ -1,17 +1,17 @@
-import { BoxCollider } from "../core/Collider.js";
-import { Entity } from "../core/Entity.js";
-import { RenderLayer } from "../core/RenderLayer.js";
-import type { Vector2D } from "../core/Vector.js";
+import { BoxCollider, RenderLayer, Entity, Vector2D } from "../core";
 
 export class $$Square extends Entity {
   private active: boolean = false;
   private subRenderLayer: RenderLayer;
-  constructor(public width: number, public height: number) {
+  constructor(
+    public width: number,
+    public height: number,
+  ) {
     super();
     this.subRenderLayer = new RenderLayer({});
   }
 
-  protected start(): void {
+  protected init(): void {
     this.collider = new BoxCollider(this.width, this.height, this.pos);
     this.subRenderLayer.resize(this.width, this.height);
     const ctx = this.subRenderLayer.getContext();
@@ -29,7 +29,7 @@ export class $$Square extends Entity {
     (this.collider as BoxCollider).updateData(
       this.width,
       this.height,
-      this.pos
+      this.pos,
     );
   }
 
@@ -62,7 +62,7 @@ export class $$Square extends Entity {
       -this.width / 2,
       -this.height / 2,
       this.width,
-      this.height
+      this.height,
     );
     ctx.restore();
   }
