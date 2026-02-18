@@ -21,7 +21,7 @@ export class AssetsManager {
     this.PATTERN_CTX = ctx;
   }
 
-  static addAsset(id: string, config: AssetConfig = {}) {
+  static registerAsset(id: string, config: AssetConfig = {}) {
     if (this.RECORD_ASSETS[id]) return this.RECORD_ASSETS[id];
 
     const width = config.width || 100;
@@ -29,24 +29,18 @@ export class AssetsManager {
 
     // ================= CANVAS BUILDER =================
     if (config.builder) {
-      const dpr = window.devicePixelRatio || 1;
       const canvas = document.createElement("canvas");
-
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = width;
+      canvas.height = height;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-
       const ctx = canvas.getContext("2d")!;
-      ctx.scale(dpr, dpr);
-
       config.builder(ctx);
-
       // --------- PATTERN MODE ---------
       if (config.pattern) {
         if (!this.PATTERN_CTX) {
           throw new Error(
-            "Pattern context not set. Use AssetsManager.setPatternContext(ctx)",
+            "Pattern context not set. Use AssetsManager.setPatternContext(ctx)"
           );
         }
 

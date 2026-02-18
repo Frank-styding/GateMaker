@@ -52,7 +52,7 @@ export class RenderLayer {
     this.canvas.style.width = this.width + "px";
     this.canvas.style.height = this.height + "px";
 
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    //this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   public setPattern(pattern: CanvasPattern) {
@@ -65,27 +65,21 @@ export class RenderLayer {
     });
   }
 
-  public initDisplay(transform: boolean = true) {
-    const dpr = window.devicePixelRatio || 1;
-    if (transform) this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  public initDisplay() {
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    if (transform) {
-      const matrix = new DOMMatrix()
-        .scale(dpr, dpr)
-        .translate(this.panX, this.panY)
-        .scale(this.zoom);
-      this.ctx.setTransform(matrix);
-    }
+    const matrix = new DOMMatrix()
+      .translate(this.panX, this.panY)
+      .scale(this.zoom);
+    this.ctx.setTransform(matrix);
   }
 
   public drawGrid() {
     if (!this.pattern) return;
-    const dpr = window.devicePixelRatio || 1;
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     const matrix = new DOMMatrix()
-      .scale(dpr, dpr)
       .translate(this.panX, this.panY)
       .scale(this.zoom);
     this.pattern.setTransform(matrix);
@@ -95,16 +89,15 @@ export class RenderLayer {
   }
 
   public screenToWorld(x: number, y: number): MouseData {
-    const dpr = window.devicePixelRatio || 1;
     return {
-      x: (x / dpr - this.panX) / this.zoom,
-      y: (y / dpr - this.panY) / this.zoom,
+      x: (x - this.panX) / this.zoom,
+      y: (y - this.panY) / this.zoom,
     };
   }
 
   public onDrag(mouseEvent: MouseData) {
-    this.panX += mouseEvent.dx!;
-    this.panY += mouseEvent.dy!;
+    this.panX += mouseEvent.dx! / this.zoom;
+    this.panY += mouseEvent.dy! / this.zoom;
   }
 
   public onZoom(mouseEvent: MouseData) {

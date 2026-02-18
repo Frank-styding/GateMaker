@@ -20,20 +20,31 @@ export class $$Node extends Entity {
   static CELL_SIZE = 50;
 
   // Connector size
-  static CONNECTION_WIDTH = 12.5;
-  static CONNECTION_HEIGHT = 25;
+  static CONNECTION_WIDTH = this.CELL_SIZE / 2;
+  static CONNECTION_HEIGHT = this.CELL_SIZE / 4;
   static PIN_MARGIN = 2;
 
   // Node data
-  public cell_w!: number;
-  public cell_h!: number;
+  public colSpan!: number;
+  public rowSpan!: number;
   public width!: number;
   public height!: number;
   public nodeWidth!: number;
   public nodeHeight!: number;
-  public node_name!: string;
+  public nodeName!: string;
   public connectors: NodeConnector[] = [];
-  private layer!: HTMLCanvasElement;
+  public layer!: HTMLCanvasElement;
+
+  //public cell_w!: number;
+  //public cell_h!: number;
+  //public width!: number;
+  //public height!: number;
+  //public nodeWidth!: number;
+  //public nodeHeight!: number;
+  //public node_name!: string;
+  //public connectors: NodeConnector[] = [];
+  //private layer!: HTMLCanvasElement;
+
   private layerDirty = true;
 
   protected updateBounding(): void {
@@ -45,25 +56,23 @@ export class $$Node extends Entity {
   protected updateCollider(): void {}
 
   protected init(): void {
-    this.cell_w = 3;
-    this.cell_h = 3;
-
+    this.colSpan = 3;
+    this.rowSpan = 3;
     const cW = $$Node.CONNECTION_WIDTH;
     const cH = $$Node.CONNECTION_HEIGHT;
     const cellSize = $$Node.CELL_SIZE;
-    this.node_name = "AND";
-    /*     this.pos.x += this.cell_w % 2 == 1 ? cellSize / 2 : 0;
-    this.pos.y += this.cell_h % 2 == 1 ? cellSize / 2 : 0; */
-    this.nodeHeight = cellSize * this.cell_h;
-    this.nodeWidth = cellSize * this.cell_w;
-    this.width = this.nodeWidth + cW * 2;
-    this.height = this.nodeHeight + cW * 2;
+    this.nodeName = "AND";
 
-    this.collider = new BoxCollider(
-      this.cell_w * cellSize,
-      this.cell_h * cellSize,
-      this.pos,
-    );
+    this.pos.x += this.colSpan % 2 == 1 ? cellSize / 2 : 0;
+    this.pos.y += this.rowSpan % 2 == 1 ? cellSize / 2 : 0;
+
+    this.nodeHeight = cellSize * this.rowSpan;
+    this.nodeWidth = cellSize * this.colSpan;
+
+    this.width = this.nodeWidth;
+    this.height = this.nodeHeight;
+
+    this.collider = new BoxCollider(this.width, this.height, this.pos);
 
     this.connectors = [
       { name: "CD", direction: "left", idx: 0 },
@@ -75,12 +84,12 @@ export class $$Node extends Entity {
       { name: "AB", direction: "top", idx: 2 },
     ];
 
-    this.layer = AssetsManager.addAsset(this.node_name, {
+    this.layer = AssetsManager.registerAsset(this.nodeName, {
       width: this.width,
       height: this.height,
       builder: (ctx) => {
         const { width, height } = ctx.canvas;
-        const offset = cW;
+        const offset = 0;
 
         ctx.fillStyle = "#ECECEC";
         ctx.fillRect(offset, offset, width - offset * 2, height - offset * 2);
@@ -92,13 +101,13 @@ export class $$Node extends Entity {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "black";
-        ctx.fillText(this.node_name, width / 2, height / 2);
+        ctx.fillText(this.nodeName, width / 2, height / 2);
 
         ctx.fillStyle = "black";
         ctx.font = "16px Arial";
         ctx.textBaseline = "middle";
 
-        for (let i = 0; i < this.connectors.length; i++) {
+        /*         for (let i = 0; i < this.connectors.length; i++) {
           const connection = this.connectors[i];
           const pinPos = 2 + cellSize / 2 + connection.idx * cellSize;
           if (connection.direction == "left") {
@@ -122,7 +131,7 @@ export class $$Node extends Entity {
             ctx.textAlign = "center";
             ctx.fillText(connection.name, pinPos + cH / 2, height - offset - 8);
           }
-        }
+        } */
       },
     }) as HTMLCanvasElement;
   }
@@ -147,14 +156,14 @@ export class $$Node extends Entity {
     const vertical = this.nodeHeight / 2 < v1.y && v1.y < this.height / 2;
     if (!horizontal && !vertical) return undefined;
     if (vertical) {
-      const a = getIdx(v.x + this.width / 2, this.cell_w);
+      const a = getIdx(v.x + this.width / 2, this.colSpan);
       if (a == undefined) return;
       if (v.y < 0) direction = "top";
       else direction = "bottom";
       idx = a;
     }
     if (horizontal) {
-      const a = getIdx(v.y + this.height / 2, this.cell_h);
+      const a = getIdx(v.y + this.height / 2, this.rowSpan);
       if (a == undefined) return;
       if (v.x < 0) direction = "left";
       else direction = "right";
@@ -164,30 +173,22 @@ export class $$Node extends Entity {
       direction == "top" || direction == "bottom"
         ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cH + cH / 2
         : direction == "left"
-          ? this.pos.x - this.width / 2 + cW / 2
-          : this.pos.x + this.width / 2 - cW / 2;
+        ? this.pos.x - this.width / 2 + cW / 2
+        : this.pos.x + this.width / 2 - cW / 2;
 
     const y =
       direction == "left" || direction == "right"
         ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cH + cH / 2
         : direction == "top"
-          ? this.pos.y + this.height / 2 - cW / 2
-          : this.pos.y - this.height / 2 + cW / 2;
+        ? this.pos.y + this.height / 2 - cW / 2
+        : this.pos.y - this.height / 2 + cW / 2;
 
     console.log(x, y);
   }
 
   protected draw(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.translate(this.pos.x, this.pos.y);
-
-    ctx.drawImage(
-      this.layer,
-      -this.width / 2,
-      -this.height / 2,
-      this.width,
-      this.height,
-    );
+    ctx.drawImage(this.layer, 0, 0, 150, 150);
     ctx.restore();
   }
 }

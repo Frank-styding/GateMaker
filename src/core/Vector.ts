@@ -1,8 +1,5 @@
 export class Vector2D {
-  constructor(
-    public x: number = 0,
-    public y: number = 0,
-  ) {}
+  constructor(public x: number = 0, public y: number = 0) {}
 
   // --------- Métodos básicos ---------
 
@@ -130,7 +127,7 @@ export class Vector2D {
   }
 
   cross(v: Vector2D): number {
-    return this.x * v.y + this.y * v.x;
+    return this.x * v.y - this.y * v.x;
   }
 
   // --------- Utilidades ---------

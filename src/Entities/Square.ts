@@ -3,10 +3,7 @@ import { BoxCollider, RenderLayer, Entity, Vector2D } from "../core";
 export class $$Square extends Entity {
   private active: boolean = false;
   private subRenderLayer: RenderLayer;
-  constructor(
-    public width: number,
-    public height: number,
-  ) {
+  constructor(public width: number, public height: number) {
     super();
     this.subRenderLayer = new RenderLayer({});
   }
@@ -29,7 +26,7 @@ export class $$Square extends Entity {
     (this.collider as BoxCollider).updateData(
       this.width,
       this.height,
-      this.pos,
+      this.pos
     );
   }
 
@@ -62,7 +59,7 @@ export class $$Square extends Entity {
       -this.width / 2,
       -this.height / 2,
       this.width,
-      this.height,
+      this.height
     );
     ctx.restore();
   }

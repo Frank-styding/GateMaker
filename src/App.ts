@@ -11,7 +11,7 @@ export class App extends Engine {
     const size = 50;
 
     AssetsManager.setPatternContext(this.display.getContext());
-    const pattern = AssetsManager.addAsset("GRID", {
+    const pattern = AssetsManager.registerAsset("GRID", {
       width: size,
       height: size,
       pattern: true,
@@ -45,6 +45,7 @@ export class App extends Engine {
     let hits: Entity[] = [];
     this.mouse.on("down", (e) => {
       if (down) return;
+      //this.display.onDown(e);
       down = true;
       const pos = this.display.screenToWorld(e.x, e.y);
       const v = new Vector2D(pos.x, pos.y);
@@ -61,6 +62,7 @@ export class App extends Engine {
     this.mouse.on("up", (e) => {
       if (!down) return;
       down = false;
+      //this.display.onUp(e);
       /*       const pos = this.display.screenToWorld(e.x, e.y);
       const v = new Vector2D(pos.x, pos.y);
       hits.forEach((item) => item._mouseUp(v)); */
@@ -74,7 +76,7 @@ export class App extends Engine {
         func: (item) => item.getAABB().mouseIsInside(v),
       }).filter((item) => item.getCollider()?.mouseIsInside(v));
       hits.forEach((item) => item._mouseDown(v));
-    });
+     });
     this.mouse.on("up", (e) => {
       if (!down) return;
       down = false;

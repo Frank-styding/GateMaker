@@ -12,8 +12,6 @@ export class Engine {
     this.display = new RenderLayer();
     this.mouse = new MouseController(this.display.getCanvas());
     this.root = new Entity();
-    this.init();
-    this.initEvents();
   }
   protected init() {}
   protected initEvents() {
@@ -66,6 +64,8 @@ export class Engine {
   }
 
   public start() {
+    this.init();
+    this.initEvents();
     this.display.initResize();
     const ctx = this.display.getContext();
 

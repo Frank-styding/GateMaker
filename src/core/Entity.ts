@@ -75,18 +75,18 @@ export class Entity {
 
   public _draw(ctx: CanvasRenderingContext2D): void {
     this.draw(ctx);
-    ctx.save();
-    if (this.debugMode) {
-      const { pos, width, height } = this.bounding;
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "red"; // Color visible
-      ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
-      if (this.collider) {
-        ctx.strokeStyle = "green";
-        this.collider.draw(ctx);
+    /*     ctx.save();
+      if (this.debugMode) {
+        const { pos, width, height } = this.bounding;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "red"; // Color visible
+        ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
+        if (this.collider) {
+          ctx.strokeStyle = "green";
+          this.collider.draw(ctx);
+        }
       }
-    }
-    ctx.restore();
+      ctx.restore(); */
   }
 
   public _update(): void {
@@ -115,7 +115,7 @@ export class Entity {
     }: {
       func?: (item: Entity) => void | boolean;
       reverse?: boolean;
-    } = {},
+    } = {}
   ) {
     const stack: Entity[] = [];
     const result: Entity[] = [];
@@ -170,7 +170,7 @@ export class Entity {
     return new AABB(
       width,
       height,
-      new Vector2D(minX + width / 2, minY + height / 2),
+      new Vector2D(minX + width / 2, minY + height / 2)
     );
   }
 }
