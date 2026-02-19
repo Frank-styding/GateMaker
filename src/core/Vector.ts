@@ -17,11 +17,11 @@ export class Vector2D {
     return new Vector2D(this.x, this.y);
   }
 
-  set(x: number, y: number): this {
+  /*   set(x: number, y: number): this {
     this.x = x;
     this.y = y;
     return this;
-  }
+  } */
 
   copy(v: Vector2D): this {
     this.x = v.x;
@@ -181,6 +181,16 @@ export class Vector2D {
 
   abs(): Vector2D {
     return new Vector2D(Math.abs(this.x), Math.abs(this.y));
+  }
+
+  set(a: number | { x: number; y: number } | Vector2D = 0, b: number = 0) {
+    if (typeof a == "object") {
+      this.x = a.x;
+      this.y = a.y;
+    } else {
+      this.x = a;
+      this.y = b;
+    }
   }
 
   // --------- Métodos estáticos ---------

@@ -44,12 +44,10 @@ export class NodeEntity extends Entity {
 
   protected updateCollider(): void {}
 
-  public fixPos() {
+  static adjustPos(node: NodeEntity) {
     const cellSize = NodeEntity.CELL_SIZE;
-    this.pos.x = Math.floor(this.pos.x / 50) * 50;
-    this.pos.y = Math.floor(this.pos.y / 50) * 50;
-    this.pos.x += this.colSpan % 2 == 1 ? cellSize / 2 : 0;
-    this.pos.y += this.rowSpan % 2 == 1 ? cellSize / 2 : 0;
+    node.pos.x += node.colSpan % 2 == 1 ? cellSize / 2 : 0;
+    node.pos.y += node.rowSpan % 2 == 1 ? cellSize / 2 : 0;
   }
 
   protected init(): void {

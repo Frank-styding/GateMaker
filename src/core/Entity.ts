@@ -122,11 +122,8 @@ export class Entity {
         }
       }
       out.push(e);
-      /* const value = func?.(e) ?? false;
-      if (!value) continue; */
 
       const children = e.getChildren();
-      // push en reversa para mantener orden visual correcto
       for (let i = children.length - 1; i >= 0; i--) {
         stack.push(children[i]);
       }

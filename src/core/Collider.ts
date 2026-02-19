@@ -29,7 +29,7 @@ export class BoxCollider implements Collider {
   updateData(width: number, height: number, pos: Vector2D, angle: number = 0) {
     this.width = width;
     this.height = height;
-    this.center = pos;
+    this.center.copy(pos);
     this.angle = angle;
     this.halfW = width / 2;
     this.halfH = height / 2;
@@ -52,7 +52,15 @@ export class LineCollider implements Collider {
     public height: number,
   ) {}
   draw(ctx: CanvasRenderingContext2D): void {
-    throw new Error("Method not implemented.");
+    ctx.beginPath();
+    ctx.lineWidth = this.height;
+    for (let i = 0; i < this.path.length; i++) {
+      const p = this.path[i];
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = "red";
+    ctx.stroke();
   }
 
   updateData(path: Vector2D[], height?: number) {
@@ -61,20 +69,33 @@ export class LineCollider implements Collider {
   }
 
   mouseIsInside(pos: Vector2D): boolean {
+    const r = this.height * 0.5;
+    const r2 = r * r;
+
+    const px = pos.x;
+    const py = pos.y;
+
     for (let i = 0; i < this.path.length - 1; i++) {
-      const a = this.path[i];
-      const b = this.path[i + 1];
-      const v = b.subtract(a);
-      const d = v.length();
-      if (d === 0) continue;
-      const vn = v.normalize();
-      const v1 = pos.subtract(a);
-      const projection = vn.dot(v1);
-      const distance = Math.abs(vn.cross(v1));
-      if (distance <= this.height && projection >= 0 && projection <= d) {
-        return true;
-      }
+      const ax = this.path[i].x;
+      const ay = this.path[i].y;
+      const bx = this.path[i + 1].x;
+      const by = this.path[i + 1].y;
+      const vx = bx - ax;
+      const vy = by - ay;
+      const wx = px - ax;
+      const wy = py - ay;
+      const c1 = wx * vx + wy * vy;
+      const c2 = vx * vx + vy * vy;
+      let t = c1 / c2;
+      if (t < 0) t = 0;
+      else if (t > 1) t = 1;
+      const projx = ax + t * vx;
+      const projy = ay + t * vy;
+      const dx = px - projx;
+      const dy = py - projy;
+      if (dx * dx + dy * dy <= r2) return true;
     }
+
     return false;
   }
 }

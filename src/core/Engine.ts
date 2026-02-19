@@ -1,7 +1,6 @@
 import { RenderLayer } from "./RenderLayer";
 import { Entity } from "./Entity";
 import { MouseController } from "./MouseController";
-import { Vector2D } from "./Vector";
 
 export class Engine {
   protected display!: RenderLayer;

@@ -6,6 +6,7 @@ export class AABB {
     public height: number = 0,
     public pos: Vector2D = new Vector2D(), // top-left corner
   ) {}
+
   get left() {
     return this.pos.x - this.width / 2;
   }

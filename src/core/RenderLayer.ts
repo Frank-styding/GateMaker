@@ -34,7 +34,6 @@ export class RenderLayer {
       this.height = this.props.custom.height;
       this.resize(this.width, this.height);
     }
-    //this.createGridPattern();
   }
 
   public setZoomLimits(min: number, max: number) {
@@ -53,8 +52,6 @@ export class RenderLayer {
 
     this.canvas.style.width = this.width + "px";
     this.canvas.style.height = this.height + "px";
-
-    //this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   public setPattern(pattern: CanvasPattern) {
@@ -91,13 +88,13 @@ export class RenderLayer {
   }
 
   public screenToWorld(
-    p: { x: number; y: number },
+    p: Vector2D | { x: number; y: number },
     disablePan: boolean = false,
-  ): MouseData {
-    return {
+  ): Vector2D {
+    return new Vector2D({
       x: (p.x - (disablePan ? 0 : this.panX)) / this.zoom,
       y: (p.y - (disablePan ? 0 : this.panY)) / this.zoom,
-    };
+    });
   }
 
   public onDrag(mouseEvent: MouseData) {
@@ -111,8 +108,7 @@ export class RenderLayer {
     const delta = -mouseEvent.delta!;
     const zoomFactor = Math.exp(delta * zoomIntensity);
     //* update transform
-    /*     const mouseX = mouseEvent.x;
-    const mouseY = mouseEvent.y; */
+
     const worldBefore = this.screenToWorld(mouseEvent);
     const newZoom = this.zoom * zoomFactor;
     if (this.minZoom < newZoom && newZoom < this.maxZoom) {
