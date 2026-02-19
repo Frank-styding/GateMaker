@@ -1,12 +1,10 @@
 import { AssetsManager, Engine, Entity, Vector2D } from "./core";
-import { $$Node } from "./Entities/Node";
-import { $$Square } from "./Entities/Square";
+import { AndEntity } from "./Entities/gates/AndEntity";
+import { NotEntity } from "./Entities/gates/NotEntity";
+import { OrEntity } from "./Entities/gates/OrEntity";
+import { NodeEntity } from "./Entities/Node";
 
 export class App extends Engine {
-  constructor() {
-    super();
-  }
-
   public init(): void {
     const size = 50;
 
@@ -29,61 +27,67 @@ export class App extends Engine {
 
     this.display.setPattern(pattern);
     this.display.setZoomLimits(0.3, 1.7);
-    this.root.addChild(new $$Node());
+    this.root.addChild(new AndEntity());
+    const a = new AndEntity();
+    a.pos.add(new Vector2D(200, 150));
+    a.markDirty();
+    this.root.addChild(a);
+    const b = new NotEntity();
+    b.pos.add(new Vector2D(300, 300));
+    this.root.addChild(b);
+
+    const c = new OrEntity();
+    c.pos.add(new Vector2D(0, 400));
+    this.root.addChild(c);
+
     this.display.panX = this.display.width / 2;
     this.display.panY = this.display.height / 2;
+    this.display.zoom = 0.5;
   }
 
   protected initEvents(): void {
     let down = false;
-    this.mouse.on("drag", (e) => {
-      this.display.onDrag(e);
-    });
-    this.mouse.on("wheel", (e) => {
-      this.display.onZoom(e);
-    });
     let hits: Entity[] = [];
+    let item: Entity | null = null;
     this.mouse.on("down", (e) => {
       if (down) return;
-      //this.display.onDown(e);
       down = true;
-      const pos = this.display.screenToWorld(e.x, e.y);
-      const v = new Vector2D(pos.x, pos.y);
-      hits = Entity.traveler(this.root, {
-        func: (item) => item.getAABB().mouseIsInside(v),
-      });
-      for (let i = 0; i < hits.length; i++) {
-        const item = hits[i];
-        if (item instanceof $$Node) {
-          item.isInsideConnection(v);
+      const v = new Vector2D(this.display.screenToWorld(e));
+      hits.length = 0;
+      Entity.collect(this.root, hits, (e) => e.getAABB().mouseIsInside(v));
+      item = hits[0];
+      if (item instanceof NodeEntity) {
+        const result = item.isInsideConnection(v);
+        if (!result || result.type != "box") {
+          item = null;
         }
       }
     });
+
     this.mouse.on("up", (e) => {
       if (!down) return;
+      if (item instanceof NodeEntity) {
+        item.fixPos();
+      }
       down = false;
-      //this.display.onUp(e);
-      /*       const pos = this.display.screenToWorld(e.x, e.y);
-      const v = new Vector2D(pos.x, pos.y);
-      hits.forEach((item) => item._mouseUp(v)); */
-    });
-    /*    this.mouse.on("down", (e) => {
-      if (down) return;
-      down = true;
-      const pos = this.display.screenToWorld(e.x, e.y);
-      const v = new Vector2D(pos.x, pos.y);
-      hits = Entity.traveler(this.root, {
-        func: (item) => item.getAABB().mouseIsInside(v),
-      }).filter((item) => item.getCollider()?.mouseIsInside(v));
-      hits.forEach((item) => item._mouseDown(v));
-     });
-    this.mouse.on("up", (e) => {
-      if (!down) return;
-      down = false;
-      const pos = this.display.screenToWorld(e.x, e.y);
-      const v = new Vector2D(pos.x, pos.y);
+      const v = new Vector2D(this.display.screenToWorld(e));
       hits.forEach((item) => item._mouseUp(v));
-    }); */
+    });
+
+    this.mouse.on("drag", (e) => {
+      if (item) {
+        const v = new Vector2D(
+          this.display.screenToWorld({ x: e.dx!, y: e.dy! }, true),
+        );
+        item.pos.add(v);
+      } else {
+        this.display.onDrag(e);
+      }
+    });
+
+    this.mouse.on("wheel", (e) => {
+      this.display.onZoom(e);
+    });
   }
 
   protected draw(ctx: CanvasRenderingContext2D): void {

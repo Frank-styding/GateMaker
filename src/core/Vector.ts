@@ -1,5 +1,15 @@
 export class Vector2D {
-  constructor(public x: number = 0, public y: number = 0) {}
+  public x: number = 0;
+  public y: number = 0;
+  constructor(a: { x: number; y: number } | number = 0, b: number = 0) {
+    if (typeof a == "object") {
+      this.x = a.x;
+      this.y = a.y;
+    } else {
+      this.x = a;
+      this.y = b!;
+    }
+  }
 
   // --------- Métodos básicos ---------
 

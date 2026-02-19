@@ -14,46 +14,7 @@ export class Engine {
     this.root = new Entity();
   }
   protected init() {}
-  protected initEvents() {
-    //this.mouse.on("drag", (e) => {
-    //  this.display.onDrag(e);
-    //});
-    //this.mouse.on("wheel", (e) => {
-    //  this.display.onZoom(e);
-    //});
-    //let hits: Entity[];
-    //
-    //this.mouse.on("down", (e) => {
-    //  const mousePos = this.display.screenToWorld(e.x, e.y);
-    //  const p = new Vector2D(mousePos.x, mousePos.y);
-    //
-    //  hits = Entity.traveler(this.root.getChildren(), {
-    //    func: (e) => e.getAABB().mouseIsInside(p),
-    //  }).filter((item) => item.getCollider()?.mouseIsInside(p));
-    //
-    //  hits.map((item) => item._mouseDown(p));
-    //});
-    //
-    //this.mouse.on("up", (e) => {
-    //  const mousePos = this.display.screenToWorld(e.x, e.y);
-    //  const p = new Vector2D(mousePos.x, mousePos.y);
-    //  hits.map((item) => item._mouseUp(p));
-    //});
-    //
-    //this.mouse.on("move", (e) => {
-    //  const mousePos = this.display.screenToWorld(e.x, e.y);
-    //  const p = new Vector2D(mousePos.x, mousePos.y);
-    //  hits.map((item) => item._mouseMove(p));
-    //});
-    //this.mouse.on("click", (e) => {
-    //  const mousePos = this.display.screenToWorld(e.x, e.y);
-    //  const p = new Vector2D(mousePos.x, mousePos.y);
-    //  Entity.traveler(this.root, {
-    //    func: (e) => e.getAABB().mouseIsInside(p),
-    //    reverse: true,
-    //  }).map((item) => item._mouseClick(p));
-    //});
-  }
+  protected initEvents() {}
 
   public getRoot() {
     return this.root;
@@ -62,6 +23,7 @@ export class Engine {
   public getCanvas() {
     return this.display.getCanvas();
   }
+  private entities: Entity[] = [];
 
   public start() {
     this.init();
@@ -70,20 +32,27 @@ export class Engine {
     const ctx = this.display.getContext();
 
     const loop = () => {
-      let l = Entity.traveler(this.root);
-      l.map((item) => item._init());
+      const view = this.display.getAABB();
+      this.entities.length = 0;
+      Entity.collect(this.root, this.entities, (e) =>
+        view.collideAABB(e.getAABB()),
+      );
+
+      for (const e of this.entities) e._init();
+      for (let i = this.entities.length - 1; i >= 0; i--) {
+        this.entities[i]._updateLayout();
+      }
       this.display.initDisplay();
-      this.draw(ctx);
-      const rev = l.slice().reverse();
-      rev.forEach((item) => item._updateLayout());
-      l.forEach((item) => item._update());
       this.update();
-      l.forEach((item) => item._draw(ctx));
+      this.draw(ctx);
+      for (const e of this.entities) e._update();
+      for (const e of this.entities) {
+        e._draw(ctx);
+      }
       requestAnimationFrame(loop);
     };
     loop();
   }
-
   protected update() {}
   protected draw(ctx: CanvasRenderingContext2D) {}
 }

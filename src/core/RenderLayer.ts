@@ -1,4 +1,6 @@
+import { AABB } from "./AABB";
 import type { MouseData } from "./MouseController";
+import { Vector2D } from "./Vector";
 
 interface RenderLayerProps {
   fullScreen?: boolean;
@@ -88,16 +90,19 @@ export class RenderLayer {
     this.ctx.restore();
   }
 
-  public screenToWorld(x: number, y: number): MouseData {
+  public screenToWorld(
+    p: { x: number; y: number },
+    disablePan: boolean = false,
+  ): MouseData {
     return {
-      x: (x - this.panX) / this.zoom,
-      y: (y - this.panY) / this.zoom,
+      x: (p.x - (disablePan ? 0 : this.panX)) / this.zoom,
+      y: (p.y - (disablePan ? 0 : this.panY)) / this.zoom,
     };
   }
 
   public onDrag(mouseEvent: MouseData) {
-    this.panX += mouseEvent.dx! / this.zoom;
-    this.panY += mouseEvent.dy! / this.zoom;
+    this.panX += mouseEvent.dx!;
+    this.panY += mouseEvent.dy!;
   }
 
   public onZoom(mouseEvent: MouseData) {
@@ -106,15 +111,29 @@ export class RenderLayer {
     const delta = -mouseEvent.delta!;
     const zoomFactor = Math.exp(delta * zoomIntensity);
     //* update transform
-    const mouseX = mouseEvent.x!;
-    const mouseY = mouseEvent.y!;
-    const worldBefore = this.screenToWorld(mouseX, mouseY);
+    /*     const mouseX = mouseEvent.x;
+    const mouseY = mouseEvent.y; */
+    const worldBefore = this.screenToWorld(mouseEvent);
     const newZoom = this.zoom * zoomFactor;
     if (this.minZoom < newZoom && newZoom < this.maxZoom) {
       this.zoom *= zoomFactor;
-      this.panX = mouseX - worldBefore.x * this.zoom;
-      this.panY = mouseY - worldBefore.y * this.zoom;
+      this.panX = mouseEvent.x - worldBefore.x * this.zoom;
+      this.panY = mouseEvent.y - worldBefore.y * this.zoom;
     }
+  }
+
+  public getAABB() {
+    const topLeft = this.screenToWorld({ x: 0, y: 0 });
+    const bottomRight = this.screenToWorld({ x: this.width, y: this.height });
+
+    const width = bottomRight.x - topLeft.x;
+    const height = bottomRight.y - topLeft.y;
+
+    return new AABB(
+      width,
+      height,
+      new Vector2D(topLeft.x + width / 2, topLeft.y + height / 2),
+    );
   }
 
   public getContext() {

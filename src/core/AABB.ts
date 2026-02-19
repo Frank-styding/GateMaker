@@ -4,7 +4,7 @@ export class AABB {
   constructor(
     public width: number = 0,
     public height: number = 0,
-    public pos: Vector2D = new Vector2D() // top-left corner
+    public pos: Vector2D = new Vector2D(), // top-left corner
   ) {}
   get left() {
     return this.pos.x - this.width / 2;
@@ -28,19 +28,17 @@ export class AABB {
     );
   }
 
-  collideAAB(b: AABB): boolean {
+  collideAABB(b: AABB): boolean {
     return AABB.collideAABB(this, b);
   }
 
   // Colisión entre dos AABB
   static collideAABB(a: AABB, b: AABB): boolean {
     return !(
-      (
-        a.pos.x + a.width < b.pos.x || // a izquierda de b
-        a.pos.x > b.pos.x + b.width || // a derecha de b
-        a.pos.y + a.height < b.pos.y || // a arriba de b
-        a.pos.y > b.pos.y + b.height
-      ) // a abajo de b
+      a.right < b.left ||
+      a.left > b.right ||
+      a.bottom < b.top ||
+      a.top > b.bottom
     );
   }
 

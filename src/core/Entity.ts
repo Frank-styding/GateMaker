@@ -12,7 +12,7 @@ export class Entity {
   private parent?: Entity;
   private isStarted = false;
 
-  public debugMode = true;
+  public debugMode = false;
   pos: Vector2D;
 
   constructor() {
@@ -75,18 +75,18 @@ export class Entity {
 
   public _draw(ctx: CanvasRenderingContext2D): void {
     this.draw(ctx);
-    /*     ctx.save();
-      if (this.debugMode) {
-        const { pos, width, height } = this.bounding;
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "red"; // Color visible
-        ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
-        if (this.collider) {
-          ctx.strokeStyle = "green";
-          this.collider.draw(ctx);
-        }
+    ctx.save();
+    if (this.debugMode) {
+      const { pos, width, height } = this.bounding;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "red"; // Color visible
+      ctx.strokeRect(pos.x - width / 2, pos.y - height / 2, width, height);
+      if (this.collider) {
+        ctx.strokeStyle = "green";
+        this.collider.draw(ctx);
       }
-      ctx.restore(); */
+    }
+    ctx.restore();
   }
 
   public _update(): void {
@@ -107,43 +107,31 @@ export class Entity {
     this.isStarted = true;
   }
 
-  static traveler(
-    entity: Entity | Entity[],
-    {
-      func,
-      reverse = false,
-    }: {
-      func?: (item: Entity) => void | boolean;
-      reverse?: boolean;
-    } = {}
+  static collect(
+    root: Entity,
+    out: Entity[],
+    func?: (item: Entity) => boolean,
   ) {
-    const stack: Entity[] = [];
-    const result: Entity[] = [];
-    if (Array.isArray(entity)) {
-      for (let i = entity.length - 1; i >= 0; i--) {
-        stack.push(entity[i]);
-      }
-    } else {
-      stack.push(entity);
-    }
-    while (stack.length > 0) {
-      const item = stack.pop()!;
-      if (func) if (func(item) === false) continue;
-      if (reverse) {
-        result.unshift(item);
-      } else {
-        result.push(item);
-      }
-      const children = item.getChildren();
-      if (children && children.length > 0) {
-        for (let i = children.length - 1; i >= 0; i--) {
-          stack.push(children[i]);
+    const stack: Entity[] = [...root.getChildren()];
+
+    while (stack.length) {
+      const e = stack.pop()!;
+      if (func != undefined) {
+        if (!func(e)) {
+          continue;
         }
       }
-    }
-    return result;
-  }
+      out.push(e);
+      /* const value = func?.(e) ?? false;
+      if (!value) continue; */
 
+      const children = e.getChildren();
+      // push en reversa para mantener orden visual correcto
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack.push(children[i]);
+      }
+    }
+  }
   static calcBounding(entity: Entity) {
     const children = entity.children;
 
@@ -170,7 +158,7 @@ export class Entity {
     return new AABB(
       width,
       height,
-      new Vector2D(minX + width / 2, minY + height / 2)
+      new Vector2D(minX + width / 2, minY + height / 2),
     );
   }
 }
