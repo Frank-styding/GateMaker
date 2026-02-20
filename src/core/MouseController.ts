@@ -9,13 +9,24 @@ export type MouseData = {
   button: number;
 };
 
-export type MouseEventType =
+/* export type MouseEventType =
   | "click"
   | "down"
   | "move"
   | "up"
   | "drag"
   | "wheel";
+ */
+export enum MouseEventType {
+  CLICK,
+  DOWN,
+  MOVE,
+  UP,
+  DRAG,
+  WHEEL,
+  DOWN_ONCE,
+  UP_ONCE,
+}
 
 export type MouseEventFunc = (pos: MouseData) => void;
 
@@ -24,11 +35,12 @@ type EventsCallbacks = {
   func: MouseEventFunc;
 }[];
 
-export enum MOUSE_BUTTONS {
+export enum MouseButton {
   LEFT = 1,
   MIDDLE = 4,
   RIGHT = 2,
 }
+
 export class MouseController {
   private callbacks: EventsCallbacks = [];
 
@@ -52,31 +64,43 @@ export class MouseController {
     // CLICK
     this.element.addEventListener("click", (e) => {
       const pos = this.getPos(e);
-      this.emit("click", { ...pos, button: 0 });
+      this.emit(MouseEventType.CLICK, { ...pos, button: 0 });
     });
+
+    let down = false;
 
     // DOWN
     this.element.addEventListener("pointerdown", (e) => {
       const pos = this.getPos(e);
+
+      if (!down) {
+        this.emit(MouseEventType.DOWN_ONCE, { ...pos, button: e.buttons });
+        down = true;
+      }
 
       this.isDragging = true;
       this.lastMouse = pos;
       this.dragStart = pos;
 
       this.element.setPointerCapture(e.pointerId);
-      this.emit("down", { ...pos, button: e.buttons });
+      this.emit(MouseEventType.DOWN, { ...pos, button: e.buttons });
     });
 
     // UP
     this.element.addEventListener("pointerup", (e) => {
       const pos = this.getPos(e);
 
+      if (down) {
+        this.emit(MouseEventType.UP_ONCE, { ...pos, button: e.buttons });
+        down = false;
+      }
+
       this.isDragging = false;
       this.lastMouse = null;
       this.dragStart = null;
 
       this.element.releasePointerCapture(e.pointerId);
-      this.emit("up", { ...pos, button: e.buttons });
+      this.emit(MouseEventType.UP, { ...pos, button: e.buttons });
     });
 
     // MOVE / DRAG
@@ -90,11 +114,18 @@ export class MouseController {
         const sdX = pos.x - this.dragStart.x;
         const sdY = pos.y - this.dragStart.y;
 
-        this.emit("drag", { ...pos, dx, dy, sdX, sdY, button: e.buttons });
+        this.emit(MouseEventType.DRAG, {
+          ...pos,
+          dx,
+          dy,
+          sdX,
+          sdY,
+          button: e.buttons,
+        });
 
         this.lastMouse = pos;
       } else {
-        this.emit("move", { ...pos, button: e.buttons });
+        this.emit(MouseEventType.MOVE, { ...pos, button: e.buttons });
       }
     });
 
@@ -102,7 +133,7 @@ export class MouseController {
     this.element.addEventListener("wheel", (e) => {
       e.preventDefault();
       const pos = { ...this.getPos(e), delta: e.deltaY };
-      this.emit("wheel", { ...pos, button: e.buttons });
+      this.emit(MouseEventType.WHEEL, { ...pos, button: e.buttons });
     });
 
     // * block events

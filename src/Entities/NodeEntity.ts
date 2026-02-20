@@ -223,11 +223,14 @@ export class NodeEntity extends Entity {
   public onDirty(): void {
     for (const item in this.wiresPos) {
       const p = this.getConnectoPos(item);
-      this.wiresPos[item].forEach((item) => item.pos.set(p));
+      this.wiresPos[item].forEach((item) => {
+        item.pos.set(p);
+        item.wire.markDirty();
+      });
     }
   }
 
-  protected draw(ctx: CanvasRenderingContext2D): void {
+  protected render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
     ctx.drawImage(

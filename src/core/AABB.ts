@@ -7,6 +7,16 @@ export class AABB {
     public pos: Vector2D = new Vector2D(), // top-left corner
   ) {}
 
+  setData(width: number, height: number, pos: Vector2D) {
+    this.width = width;
+    this.height = height;
+    this.pos.set(pos);
+  }
+
+  set(a: AABB) {
+    this.setData(a.width, a.height, a.pos);
+  }
+
   get left() {
     return this.pos.x - this.width / 2;
   }
@@ -43,6 +53,15 @@ export class AABB {
     return AABB.collideAABB(this, b);
   }
 
+  containsAABB(b: AABB): boolean {
+    return (
+      b.left >= this.left &&
+      b.right <= this.right &&
+      b.top >= this.top &&
+      b.bottom <= this.bottom
+    );
+  }
+
   // Colisión entre dos AABB
   static collideAABB(a: AABB, b: AABB): boolean {
     return !(
@@ -56,10 +75,7 @@ export class AABB {
   // Punto dentro del AABB
   static insideAABB(box: AABB, p: Vector2D): boolean {
     return (
-      p.x >= box.pos.x &&
-      p.x <= box.pos.x + box.width &&
-      p.y >= box.pos.y &&
-      p.y <= box.pos.y + box.height
+      p.x >= box.left && p.x <= box.right && p.y >= box.top && p.y <= box.bottom
     );
   }
 }

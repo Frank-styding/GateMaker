@@ -87,16 +87,6 @@ export class RenderLayer {
     this.ctx.restore();
   }
 
-  public screenToWorld(
-    p: Vector2D | { x: number; y: number },
-    disablePan: boolean = false,
-  ): Vector2D {
-    return new Vector2D({
-      x: (p.x - (disablePan ? 0 : this.panX)) / this.zoom,
-      y: (p.y - (disablePan ? 0 : this.panY)) / this.zoom,
-    });
-  }
-
   public onDrag(mouseEvent: MouseData) {
     this.panX += mouseEvent.dx!;
     this.panY += mouseEvent.dy!;
@@ -118,9 +108,29 @@ export class RenderLayer {
     }
   }
 
+  public screenToWorld(e: MouseData): MouseData {
+    return {
+      ...e,
+      x: (e.x - this.panX) / this.zoom,
+      y: (e.y - this.panY) / this.zoom,
+      dx: e.dx != undefined ? e.dx / this.zoom : undefined,
+      dy: e.dy != undefined ? e.dy / this.zoom : undefined,
+    };
+  }
+
+  public screenToWorldVector(e: { x: number; y: number }): Vector2D {
+    return new Vector2D({
+      x: (e.x - this.panX) / this.zoom,
+      y: (e.y - this.panY) / this.zoom,
+    });
+  }
+
   public getAABB() {
-    const topLeft = this.screenToWorld({ x: 0, y: 0 });
-    const bottomRight = this.screenToWorld({ x: this.width, y: this.height });
+    const topLeft = this.screenToWorldVector({ x: 0, y: 0 });
+    const bottomRight = this.screenToWorldVector({
+      x: this.width,
+      y: this.height,
+    });
 
     const width = bottomRight.x - topLeft.x;
     const height = bottomRight.y - topLeft.y;

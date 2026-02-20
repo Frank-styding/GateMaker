@@ -43,17 +43,17 @@ export class Engine {
       }
       this.display.initDisplay();
       this.update();
-      this.draw(ctx);
+      this.render(ctx);
       for (const e of this.entities) e._update();
       for (const e of this.entities) {
-        e._draw(ctx);
+        e._render(ctx);
       }
-      this.drawAfter(ctx);
+      this.renderAfter(ctx);
       requestAnimationFrame(loop);
     };
     loop();
   }
   protected update() {}
-  protected draw(ctx: CanvasRenderingContext2D) {}
-  protected drawAfter(ctx: CanvasRenderingContext2D) {}
+  protected render(ctx: CanvasRenderingContext2D) {}
+  protected renderAfter(ctx: CanvasRenderingContext2D) {}
 }

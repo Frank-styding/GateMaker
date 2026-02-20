@@ -5,3 +5,4 @@ export { Entity } from "./Entity";
 export { Engine } from "./Engine";
 export { BoxCollider, LineCollider } from "./Collider";
 export { RenderLayer } from "./RenderLayer";
+export { MouseButton, type MouseData } from "./MouseController";

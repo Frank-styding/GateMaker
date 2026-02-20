@@ -18,12 +18,15 @@ export class BoxCollider implements Collider {
     this.halfH = height / 2;
   }
   draw(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    ctx.strokeStyle = "green";
     ctx.strokeRect(
       this.center.x - this.halfW,
       this.center.y - this.halfH,
       this.width,
       this.height,
     );
+    ctx.restore();
   }
 
   updateData(width: number, height: number, pos: Vector2D, angle: number = 0) {
@@ -52,6 +55,7 @@ export class LineCollider implements Collider {
     public height: number,
   ) {}
   draw(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
     ctx.beginPath();
     ctx.lineWidth = this.height;
     for (let i = 0; i < this.path.length; i++) {
@@ -59,8 +63,9 @@ export class LineCollider implements Collider {
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = "red";
+    ctx.strokeStyle = "green";
     ctx.stroke();
+    ctx.restore();
   }
 
   updateData(path: Vector2D[], height?: number) {

@@ -29,7 +29,7 @@ export class Wire extends Entity {
     const pad = Wire.LINE_HEIGHT / 2;
     this.bounding.width = maxX - minX + pad * 2;
     this.bounding.height = maxY - minY + pad * 2;
-    this.bounding.pos = new Vector2D((maxX + minX) / 2, (maxY + minY) / 2);
+    this.bounding.pos.set((maxX + minX) / 2, (maxY + minY) / 2);
   }
 
   public moveLastPoint(pos: Vector2D) {
@@ -65,7 +65,7 @@ export class Wire extends Entity {
   }
 
   protected updateCollider(): void {}
-  protected draw(ctx: CanvasRenderingContext2D): void {
+  protected render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.beginPath();
     ctx.lineWidth = Wire.LINE_HEIGHT;

@@ -64,10 +64,10 @@ export class Entity {
   protected init() {}
   protected update() {}
   protected updateCollider() {}
-  protected draw(ctx: CanvasRenderingContext2D) {}
+  protected render(ctx: CanvasRenderingContext2D) {}
 
   protected updateBounding() {
-    this.bounding = Entity.calcBounding(this);
+    this.bounding = Entity.calcBounding(this.children, this.pos);
   }
 
   public getChildren(): Entity[] {
@@ -80,8 +80,8 @@ export class Entity {
     this.parent?.markDirty();
   }
 
-  public _draw(ctx: CanvasRenderingContext2D): void {
-    this.draw(ctx);
+  public _render(ctx: CanvasRenderingContext2D): void {
+    this.render(ctx);
     ctx.save();
     if (this.debugMode) {
       const { pos, width, height } = this.bounding;
@@ -138,11 +138,11 @@ export class Entity {
       }
     }
   }
-  static calcBounding(entity: Entity) {
-    const children = entity.children;
+  static calcBounding(children: Entity[], pos: Vector2D = new Vector2D()) {
+    /*  const children = entity.children; */
 
     if (children.length === 0) {
-      return new AABB(0, 0, entity.pos);
+      return new AABB(0, 0, /* entity. */ pos);
     }
 
     let minX = Infinity;
