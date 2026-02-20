@@ -1,4 +1,4 @@
-import { App } from "./App";
+import { App } from "./editor/App";
 
 import "./style.css";
 

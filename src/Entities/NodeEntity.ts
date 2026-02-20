@@ -1,4 +1,5 @@
 import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
+import type { Wire } from "./Wire";
 
 export type NodeDirection = "left" | "top" | "right" | "bottom";
 
@@ -35,6 +36,13 @@ export class NodeEntity extends Entity {
   public connectors: NodeConnector[] = [];
   public layer!: HTMLCanvasElement;
   public showLabel: boolean = false;
+
+  private wiresPos: Record<string, { pos: Vector2D; wire: Wire }[]> = {};
+
+  constructor() {
+    super();
+    this.layerIdx = 1;
+  }
 
   protected updateBounding(): void {
     this.bounding.width = this.width;
@@ -123,8 +131,8 @@ export class NodeEntity extends Entity {
     }) as HTMLCanvasElement;
   }
 
-  public isInsideConnection(p: Vector2D) {
-    const v = p.subtract(this.pos);
+  public isInside(p: Vector2D) {
+    const v = p.clone().subtract(this.pos);
     const v1 = v.abs();
     const cW = NodeEntity.CONNECTION_WIDTH;
     const cH = NodeEntity.CONNECTION_HEIGHT;
@@ -180,7 +188,43 @@ export class NodeEntity extends Entity {
           ? this.pos.y + this.height / 2 - cH / 2
           : this.pos.y - this.height / 2 + cH / 2;
 
-    return { type: "connector", x, y, ...item };
+    return { type: "connector", x, y, name: item.name };
+  }
+
+  public getConnectoPos(name: string) {
+    const value = this.connectors.find((item) => item.name == name);
+    if (!value) return undefined;
+    const { direction, idx } = value;
+    const cW = NodeEntity.CONNECTION_WIDTH;
+    const cH = NodeEntity.CONNECTION_HEIGHT;
+
+    const x =
+      direction == "top" || direction == "bottom"
+        ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cW + cW / 2
+        : direction == "left"
+          ? this.pos.x - this.width / 2 + cH / 2
+          : this.pos.x + this.width / 2 - cH / 2;
+
+    const y =
+      direction == "left" || direction == "right"
+        ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cW + cW / 2
+        : direction == "top"
+          ? this.pos.y + this.height / 2 - cH / 2
+          : this.pos.y - this.height / 2 + cH / 2;
+
+    return { x, y };
+  }
+
+  public setWirePos(name: string, wirePos: Vector2D, wire: Wire) {
+    this.wiresPos[name] ??= [];
+    this.wiresPos[name].push({ pos: wirePos, wire: wire });
+  }
+
+  public onDirty(): void {
+    for (const item in this.wiresPos) {
+      const p = this.getConnectoPos(item);
+      this.wiresPos[item].forEach((item) => item.pos.set(p));
+    }
   }
 
   protected draw(ctx: CanvasRenderingContext2D): void {

@@ -36,7 +36,7 @@ export class BoxCollider implements Collider {
   }
 
   mouseIsInside(p: Vector2D): boolean {
-    const v = p.subtract(this.center).rotate(-this.angle);
+    const v = p.clone().subtract(this.center).rotate(-this.angle);
     return (
       -this.halfW <= v.x &&
       v.x <= this.halfW &&

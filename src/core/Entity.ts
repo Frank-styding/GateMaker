@@ -12,8 +12,9 @@ export class Entity {
   private parent?: Entity;
   private isStarted = false;
 
+  public layerIdx: number = 0;
   public debugMode = false;
-  pos: Vector2D;
+  public pos: Vector2D;
 
   constructor() {
     this.id = uuid();
@@ -47,6 +48,12 @@ export class Entity {
     entity.parent = this;
     this.children.push(entity);
     this.markDirty();
+    return this;
+  }
+
+  public removeChild(entity: Entity): this {
+    const id = entity.id;
+    this.children = this.children.filter((item) => item.id != id);
     return this;
   }
 
@@ -97,9 +104,11 @@ export class Entity {
     if (this.dirtyLayout) {
       this.updateCollider();
       this.updateBounding();
+      this.onDirty();
       this.dirtyLayout = false;
     }
   }
+  protected onDirty() {}
 
   public _init(): void {
     if (this.isStarted) return;

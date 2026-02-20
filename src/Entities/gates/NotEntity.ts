@@ -1,4 +1,4 @@
-import { NodeEntity } from "../Node";
+import { NodeEntity } from "../NodeEntity";
 
 export class NotEntity extends NodeEntity {
   constructor() {

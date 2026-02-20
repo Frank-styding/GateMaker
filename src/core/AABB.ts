@@ -20,6 +20,16 @@ export class AABB {
     return this.pos.y + this.height / 2;
   }
 
+  setFromTwoPoints(a: Vector2D, b: Vector2D) {
+    const cX = (a.x + b.x) / 2;
+    const cY = (a.y + b.y) / 2;
+    const w = Math.abs(a.x - b.x);
+    const h = Math.abs(a.y - b.y);
+    this.width = w;
+    this.height = h;
+    this.pos.set(cX, cY);
+  }
+
   mouseIsInside(pos: Vector2D): boolean {
     return (
       pos.x >= this.left &&

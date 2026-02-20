@@ -36,7 +36,7 @@ export class Engine {
       Entity.collect(this.root, this.entities, (e) =>
         view.collideAABB(e.getAABB()),
       );
-
+      this.entities.sort((a, b) => a.layerIdx - b.layerIdx);
       for (const e of this.entities) e._init();
       for (let i = this.entities.length - 1; i >= 0; i--) {
         this.entities[i]._updateLayout();
@@ -48,10 +48,12 @@ export class Engine {
       for (const e of this.entities) {
         e._draw(ctx);
       }
+      this.drawAfter(ctx);
       requestAnimationFrame(loop);
     };
     loop();
   }
   protected update() {}
   protected draw(ctx: CanvasRenderingContext2D) {}
+  protected drawAfter(ctx: CanvasRenderingContext2D) {}
 }

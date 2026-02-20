@@ -6,6 +6,7 @@ export type MouseData = {
   sdX?: number;
   sdY?: number;
   delta?: number;
+  button: number;
 };
 
 export type MouseEventType =
@@ -23,6 +24,11 @@ type EventsCallbacks = {
   func: MouseEventFunc;
 }[];
 
+export enum MOUSE_BUTTONS {
+  LEFT = 1,
+  MIDDLE = 4,
+  RIGHT = 2,
+}
 export class MouseController {
   private callbacks: EventsCallbacks = [];
 
@@ -46,7 +52,7 @@ export class MouseController {
     // CLICK
     this.element.addEventListener("click", (e) => {
       const pos = this.getPos(e);
-      this.emit("click", pos);
+      this.emit("click", { ...pos, button: 0 });
     });
 
     // DOWN
@@ -58,7 +64,7 @@ export class MouseController {
       this.dragStart = pos;
 
       this.element.setPointerCapture(e.pointerId);
-      this.emit("down", pos);
+      this.emit("down", { ...pos, button: e.buttons });
     });
 
     // UP
@@ -70,7 +76,7 @@ export class MouseController {
       this.dragStart = null;
 
       this.element.releasePointerCapture(e.pointerId);
-      this.emit("up", pos);
+      this.emit("up", { ...pos, button: e.buttons });
     });
 
     // MOVE / DRAG
@@ -84,19 +90,27 @@ export class MouseController {
         const sdX = pos.x - this.dragStart.x;
         const sdY = pos.y - this.dragStart.y;
 
-        this.emit("drag", { ...pos, dx, dy, sdX, sdY });
+        this.emit("drag", { ...pos, dx, dy, sdX, sdY, button: e.buttons });
 
         this.lastMouse = pos;
       } else {
-        this.emit("move", pos);
+        this.emit("move", { ...pos, button: e.buttons });
       }
     });
 
     // WHEEL
     this.element.addEventListener("wheel", (e) => {
+      e.preventDefault();
       const pos = { ...this.getPos(e), delta: e.deltaY };
-      this.emit("wheel", pos);
+      this.emit("wheel", { ...pos, button: e.buttons });
     });
+
+    // * block events
+    this.element.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+    });
+    this.element.addEventListener("dragstart", (e) => e.preventDefault());
+    this.element.addEventListener("selectstart", (e) => e.preventDefault());
   }
 
   private emit(type: MouseEventType, pos: MouseData) {
