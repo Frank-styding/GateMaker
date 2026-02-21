@@ -88,8 +88,8 @@ export class RenderLayer {
   }
 
   public onDrag(mouseEvent: MouseData) {
-    this.panX += mouseEvent.dx!;
-    this.panY += mouseEvent.dy!;
+    this.panX += mouseEvent.dx! * this.zoom;
+    this.panY += mouseEvent.dy! * this.zoom;
   }
 
   public onZoom(mouseEvent: MouseData) {

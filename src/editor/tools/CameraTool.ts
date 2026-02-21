@@ -10,7 +10,8 @@ export class CameraTool implements Tool {
   }
   onDrag(e: MouseData): void {
     if (e.button !== MouseButton.MIDDLE) return;
-    this.display.onDrag(e);
+    const we = this.display.screenToWorld(e);
+    this.display.onDrag(we);
   }
   onWheel(e: MouseData): void {
     this.display.onZoom(e);

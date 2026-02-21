@@ -1,5 +1,5 @@
 import { Entity, LineCollider, Vector2D } from "../core";
-import { NodeEntity } from "./NodeEntity";
+import { GridManager } from "../editor/GridManager";
 
 export class Wire extends Entity {
   static LINE_HEIGHT: number = 14;
@@ -57,7 +57,7 @@ export class Wire extends Entity {
   }
 
   static adjustPos(p: Vector2D) {
-    const cellSize = NodeEntity.CELL_SIZE;
+    const cellSize = GridManager.CELL_SIZE;
     p.y = Math.floor(p.y / cellSize) * cellSize;
     p.x = Math.floor(p.x / cellSize) * cellSize;
     p.x += cellSize / 2;

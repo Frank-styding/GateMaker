@@ -1,18 +1,22 @@
-import { Engine, Vector2D } from "../core";
+import { Engine, Entity, Vector2D } from "../core";
 import { AndEntity } from "../Entities/gates/AndEntity";
 import { NotEntity } from "../Entities/gates/NotEntity";
 import { OrEntity } from "../Entities/gates/OrEntity";
+import { NodeEntity } from "../Entities/NodeEntity";
+import { GridManager } from "./GridManager";
 import { initGridPattern } from "./GridPattern";
 import { ToolManager } from "./tools/ToolManager";
 
 export class App extends Engine {
   public tools!: ToolManager;
+  public grid!: GridManager;
 
   public init(): void {
     const pattern = initGridPattern(this.display.getContext());
     this.display.setPattern(pattern);
     this.display.setZoomLimits(0.3, 1.7);
-    this.tools = new ToolManager(this.display, this.root);
+    this.grid = new GridManager();
+    this.tools = new ToolManager(this.display, this.root, this.grid);
     //? ---------------------------------------
     this.display.panX = this.display.width / 2 - 200;
     this.display.panY = this.display.height / 2;
@@ -37,6 +41,12 @@ export class App extends Engine {
     this.root.addChild(c);
     this.root.addChild(d);
     this.root.addChild(e);
+  }
+
+  protected onInitEntity(e: Entity): void {
+    if (e instanceof NodeEntity) {
+      e.initGrid(this.grid);
+    }
   }
 
   protected render(ctx: CanvasRenderingContext2D): void {

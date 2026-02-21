@@ -3,7 +3,6 @@ import {
   Entity,
   Vector2D,
   RenderLayer,
-  Engine,
   MouseButton,
 } from "../../core";
 import { AABB } from "../../core/AABB";
@@ -19,6 +18,7 @@ export class SelectionTool implements Tool {
   end!: Vector2D;
   box!: AABB;
   display!: RenderLayer;
+  grid!: GridManager;
   root!: Entity;
   out!: Entity[];
 
@@ -31,6 +31,7 @@ export class SelectionTool implements Tool {
   init(ctx: ToolContext): void {
     this.display = ctx.display;
     this.root = ctx.root;
+    this.grid = ctx.grid;
     this.out = [];
     this.unLock = ctx.unLock;
 
@@ -106,9 +107,12 @@ export class SelectionTool implements Tool {
   onUp(e: MouseData): void {
     if (this.draggingSelection) {
       this.out.forEach((item) => {
-        GridManager.snap(item.pos);
-        NodeEntity.adjustPos(item as NodeEntity);
-        item.markDirty();
+        if (item instanceof NodeEntity) {
+          GridManager.snap(item.pos);
+          NodeEntity.adjustPos(item);
+          this.grid.registerEntity(item);
+          item.markDirty();
+        }
       });
       this.box.set(Entity.calcBounding(this.out));
     }

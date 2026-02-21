@@ -9,10 +9,12 @@ import { CameraTool } from "./CameraTool";
 import { WireTool } from "./WireTool";
 import { SelectionTool } from "./SelectionTool";
 import { Wire } from "../../Entities/Wire";
+import type { GridManager } from "../GridManager";
 
 export interface ToolContext {
   root: Entity;
   display: RenderLayer;
+  grid: GridManager;
   select(entities: Entity[]): void;
   unLock(): void;
 }
@@ -41,10 +43,12 @@ export class ToolManager {
   constructor(
     public display: RenderLayer,
     public root: Entity,
+    public grid: GridManager,
   ) {
     this.mouse = new MouseController(display.getCanvas());
 
     this.ctx = {
+      grid,
       root,
       display,
       select: (entities) => {
@@ -109,11 +113,14 @@ export class ToolManager {
   // -------- Selection ----------
   getHits(pos: Vector2D): Entity | undefined {
     this.hits.length = 0;
+    const item = this.grid.queryPoint(pos.x, pos.y);
 
+    if (item.length > 0) {
+      return item[0];
+    }
     Entity.collect(this.root, this.hits, (ent) =>
       ent.getAABB().mouseIsInside(pos),
     );
-
     this.hits.sort((a, b) => b.layerIdx - a.layerIdx);
     return this.hits.find((e) => e.getCollider()?.mouseIsInside(pos));
   }

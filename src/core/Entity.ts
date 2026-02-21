@@ -10,7 +10,7 @@ export class Entity {
   protected bounding: AABB;
   private dirtyLayout;
   private parent?: Entity;
-  private isStarted = false;
+  public isStarted = false;
 
   public layerIdx: number = 0;
   public debugMode = false;

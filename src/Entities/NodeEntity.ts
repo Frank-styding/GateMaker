@@ -1,4 +1,5 @@
 import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
+import { GridManager } from "../editor/GridManager";
 import type { Wire } from "./Wire";
 
 export type NodeDirection = "left" | "top" | "right" | "bottom";
@@ -18,11 +19,10 @@ export interface NodeDefinition {
 
 export class NodeEntity extends Entity {
   // Grid system
-  static CELL_SIZE = 50;
 
   // Connector size
-  static CONNECTION_WIDTH = this.CELL_SIZE / 2;
-  static CONNECTION_HEIGHT = this.CELL_SIZE / 4;
+  static CONNECTION_WIDTH = GridManager.CELL_SIZE / 2;
+  static CONNECTION_HEIGHT = GridManager.CELL_SIZE / 4;
   static PIN_MARGIN = 2;
 
   // Node data
@@ -36,6 +36,11 @@ export class NodeEntity extends Entity {
   public connectors: NodeConnector[] = [];
   public layer!: HTMLCanvasElement;
   public showLabel: boolean = false;
+  //grid properties
+  public _cells: number[] = [];
+
+  public _lastCol?: number;
+  public _lastRow?: number;
 
   private wiresPos: Record<string, { pos: Vector2D; wire: Wire }[]> = {};
 
@@ -53,15 +58,19 @@ export class NodeEntity extends Entity {
   protected updateCollider(): void {}
 
   static adjustPos(node: NodeEntity) {
-    const cellSize = NodeEntity.CELL_SIZE;
+    const cellSize = GridManager.CELL_SIZE;
     node.pos.x += node.colSpan % 2 == 1 ? cellSize / 2 : 0;
     node.pos.y += node.rowSpan % 2 == 1 ? cellSize / 2 : 0;
+  }
+
+  public initGrid(grid: GridManager) {
+    grid.registerEntity(this);
   }
 
   protected init(): void {
     const cW = NodeEntity.CONNECTION_WIDTH;
     const cH = NodeEntity.CONNECTION_HEIGHT;
-    const cellSize = NodeEntity.CELL_SIZE;
+    const cellSize = GridManager.CELL_SIZE;
 
     this.pos.x += this.colSpan % 2 == 1 ? cellSize / 2 : 0;
     this.pos.y += this.rowSpan % 2 == 1 ? cellSize / 2 : 0;
@@ -191,7 +200,7 @@ export class NodeEntity extends Entity {
     return { type: "connector", x, y, name: item.name };
   }
 
-  public getConnectoPos(name: string) {
+  public getConnectorPos(name: string) {
     const value = this.connectors.find((item) => item.name == name);
     if (!value) return undefined;
     const { direction, idx } = value;
@@ -222,7 +231,7 @@ export class NodeEntity extends Entity {
 
   public onDirty(): void {
     for (const item in this.wiresPos) {
-      const p = this.getConnectoPos(item);
+      const p = this.getConnectorPos(item);
       this.wiresPos[item].forEach((item) => {
         item.pos.set(p);
         item.wire.markDirty();
