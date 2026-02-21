@@ -28,7 +28,7 @@ export class WireTool implements Tool {
   }
 
   onDown(e: MouseData, hits?: Entity): void {
-    const v = new Vector2D(e);
+    const v = this.display.screenToWorldVector(e);
     if (e.button == MouseButton.LEFT) {
       const node = hits as NodeEntity;
       if (node instanceof NodeEntity) {

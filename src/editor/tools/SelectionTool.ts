@@ -4,6 +4,7 @@ import {
   Vector2D,
   RenderLayer,
   Engine,
+  MouseButton,
 } from "../../core";
 import { AABB } from "../../core/AABB";
 import { NodeEntity } from "../../Entities/NodeEntity";
@@ -41,7 +42,8 @@ export class SelectionTool implements Tool {
 
   // ---------------- MOUSE DOWN ----------------
   onDown(e: MouseData, hit?: Entity): void {
-    const v = new Vector2D(e);
+    if (e.button != MouseButton.LEFT) return;
+    const v = this.display.screenToWorldVector(e);
 
     // 1️⃣ Click inside selection box → drag group
     if (this.active && this.box.mouseIsInside(v)) {
@@ -73,6 +75,7 @@ export class SelectionTool implements Tool {
 
   // ---------------- DRAG ----------------
   onDrag(e: MouseData): void {
+    if (e.button != MouseButton.LEFT) return;
     const v = this.display.screenToWorldVector(e);
 
     // Move selected entities
@@ -100,7 +103,7 @@ export class SelectionTool implements Tool {
   }
 
   // ---------------- UP ----------------
-  onUp(): void {
+  onUp(e: MouseData): void {
     if (this.draggingSelection) {
       this.out.forEach((item) => {
         GridManager.snap(item.pos);

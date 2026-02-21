@@ -81,10 +81,7 @@ export class ToolManager {
 
   autoSelectTool(hit: Entity | undefined, e: MouseData) {
     if (this.current?.lock) return;
-    if (e.button == MouseButton.MIDDLE) {
-      this.use("camera");
-      return;
-    }
+    if (e.button == MouseButton.MIDDLE) return;
 
     if (hit) {
       if (hit instanceof NodeEntity) {
@@ -126,16 +123,18 @@ export class ToolManager {
     this.mouse.on(MouseEventType.DOWN_ONCE, (e) => {
       const we = this.display.screenToWorld(e);
       const hit = this.getHits(new Vector2D(we));
-      console.log(hit);
       this.autoSelectTool(hit, we);
-      this.current?.onDown?.(we, hit);
+      this.current?.onDown?.(e, hit);
     });
-    this.mouse.on(MouseEventType.DRAG, (e) => this.current?.onDrag?.(e));
+    this.mouse.on(MouseEventType.DRAG, (e) => {
+      this.tools.get("camera")?.onDrag?.(e);
+      this.current?.onDrag?.(e);
+    });
     this.mouse.on(MouseEventType.MOVE, (e) => this.current?.onMove?.(e));
     this.mouse.on(MouseEventType.UP_ONCE, (e) => this.current?.onUp?.(e));
     this.mouse.on(MouseEventType.WHEEL, (e) => {
+      this.tools.get("camera")?.onWheel?.(e);
       if (this.current?.lock) return;
-      this.use("camera");
       this.current?.onWheel?.(e);
     });
   }

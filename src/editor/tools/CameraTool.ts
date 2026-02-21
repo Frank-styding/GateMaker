@@ -1,4 +1,4 @@
-import type { MouseData, RenderLayer } from "../../core";
+import { MouseButton, type MouseData, type RenderLayer } from "../../core";
 import type { Tool, ToolContext } from "./ToolManager";
 
 export class CameraTool implements Tool {
@@ -9,6 +9,7 @@ export class CameraTool implements Tool {
     this.display = ctx.display;
   }
   onDrag(e: MouseData): void {
+    if (e.button !== MouseButton.MIDDLE) return;
     this.display.onDrag(e);
   }
   onWheel(e: MouseData): void {
