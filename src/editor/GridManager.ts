@@ -1,6 +1,6 @@
 import { type Entity, Vector2D } from "../core";
 import { NodeEntity } from "../Entities/NodeEntity";
-import { fastFloor } from "./utils";
+import { fastFloor, hashPos } from "./utils";
 
 export class GridManager {
   private memory: Map<number, Entity[]> = new Map();
@@ -11,9 +11,6 @@ export class GridManager {
   }
 
   // Spatial hash function (low collision)
-  private hash(x: number, y: number) {
-    return ((x & 0xffff) << 16) | (y & 0xffff);
-  }
 
   registerEntity(e: NodeEntity) {
     const inv = GridManager.CELL_SIZE_INV;
@@ -38,7 +35,7 @@ export class GridManager {
       for (let j = 0; j < e.rowSpan; j++) {
         const col = startCol + i;
         const row = startRow + j;
-        const key = this.hash(col, row);
+        const key = hashPos(col, row);
 
         let cell = this.memory.get(key);
         if (!cell) {
@@ -75,7 +72,7 @@ export class GridManager {
     const inv = GridManager.CELL_SIZE_INV;
     const col = fastFloor(x * inv);
     const row = fastFloor(y * inv);
-    const key = this.hash(col, row);
+    const key = hashPos(col, row);
 
     return this.memory.get(key) ?? [];
   }
@@ -92,7 +89,7 @@ export class GridManager {
 
     for (let col = minCol; col <= maxCol; col++) {
       for (let row = minRow; row <= maxRow; row++) {
-        const cell = this.memory.get(this.hash(col, row));
+        const cell = this.memory.get(hashPos(col, row));
         if (!cell) continue;
         for (const e of cell) result.add(e);
       }
@@ -113,7 +110,7 @@ export class GridManager {
       for (let j = -halfRow; j <= halfRow; j++) {
         const col = baseCol + i;
         const row = baseRow + j;
-        const key = this.hash(col, row);
+        const key = hashPos(col, row);
 
         const cell = this.memory.get(key);
         if (!cell) continue;
@@ -126,6 +123,25 @@ export class GridManager {
     }
 
     return false;
+  }
+
+  public isWalkable(col: number, row: number): boolean {
+    const key = hashPos(col, row);
+    const cell = this.memory.get(key);
+    return !cell || cell.length === 0;
+  }
+
+  public worldToGrid(p: Vector2D) {
+    const inv = GridManager.CELL_SIZE_INV;
+    return {
+      x: fastFloor(p.x * inv),
+      y: fastFloor(p.y * inv),
+    };
+  }
+
+  public gridToWorld(x: number, y: number) {
+    const s = GridManager.CELL_SIZE;
+    return new Vector2D(x * s + s / 2, y * s + s / 2);
   }
 
   static snap(p: Vector2D) {

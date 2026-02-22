@@ -77,8 +77,10 @@ export class Engine {
   }
   protected getEntities() {
     const view = this.display.getAABB();
-    Entity.collect(this.root, this.entities, (e) =>
-      view.collideAABB(e.getAABB()),
+    Entity.collect(
+      this.root,
+      this.entities,
+      (e) => view.collideAABB(e.getAABB()) && !e.hide,
     );
     this.entities.sort((a, b) => a.layerIdx - b.layerIdx);
   }

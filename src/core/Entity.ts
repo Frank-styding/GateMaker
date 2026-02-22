@@ -16,6 +16,8 @@ export class Entity {
   public debugMode = false;
   public pos: Vector2D;
 
+  public hide: boolean = false;
+
   constructor() {
     this.id = uuid();
     this.children = [];
@@ -107,6 +109,12 @@ export class Entity {
       this.onDirty();
       this.dirtyLayout = false;
     }
+  }
+
+  public forceLayoutUpdate() {
+    this.updateCollider();
+    this.updateBounding();
+    this.onDirty();
   }
   protected onDirty() {}
 

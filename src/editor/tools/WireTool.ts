@@ -7,23 +7,22 @@ import {
 } from "../../core";
 import { NodeEntity } from "../../Entities/NodeEntity";
 import { Wire } from "../../Entities/Wire";
+import type { GridManager } from "../GridManager";
 import type { Tool, ToolContext } from "./ToolManager";
 
 export class WireTool implements Tool {
   name = "wire";
   lock: boolean = true;
-  current: {
-    wire: Wire;
-    startNode: NodeEntity;
-    startName: string;
-  } | null = null;
+  current: Wire | null = null;
   display!: RenderLayer;
   root!: Entity;
+  grid!: GridManager;
   unLock!: () => void;
 
   init(ctx: ToolContext): void {
     this.display = ctx.display;
     this.root = ctx.root;
+    this.grid = ctx.grid;
     this.unLock = ctx.unLock;
   }
 
@@ -36,25 +35,18 @@ export class WireTool implements Tool {
         const pos = new Vector2D(connector);
         if (connector && connector.type == "connector") {
           if (!this.current) {
-            const wire = new Wire([pos, pos.clone()]);
-            this.current = {
-              wire,
-              startNode: node,
-              startName: connector.name!,
-            };
+            const wire = new Wire();
+            wire.startWire(node, connector.name!, pos);
+            this.current = wire;
           } else {
-            const { wire, startNode, startName } = this.current;
-            startNode.setWirePos(startName, wire.path[0], wire);
-            const lastPos = wire.path[wire.path.length - 1];
-            lastPos.set(pos);
-            node.setWirePos(connector.name!, lastPos, wire);
-            this.root.addChild(wire);
+            this.current.endWire(node, connector.name!, pos);
+            this.root.addChild(this.current);
+            this.current.recalc(this.grid);
+            this.current.forceLayoutUpdate();
             this.current = null;
             this.unLock();
           }
         }
-      } else {
-        this.current?.wire.path.push(v);
       }
     } else {
       this.current = null;
@@ -64,10 +56,10 @@ export class WireTool implements Tool {
 
   onMove(e: MouseData): void {
     const v = this.display.screenToWorldVector(e);
-    this.current?.wire.moveLastPoint(v);
+    this.current?.moveLastPoint(v);
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    this.current?.wire._render(ctx);
+    this.current?._render(ctx);
   }
 }
