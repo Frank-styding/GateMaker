@@ -1,5 +1,6 @@
 // WireRouter.ts
 import { Vector2D } from "../core";
+import type { Wire } from "../Entities/Wire";
 import { GridManager } from "./GridManager";
 import { hashPos } from "./utils";
 
@@ -9,12 +10,13 @@ type Node = {
   g: number;
   h: number;
   f: number;
+  dx: number; // Dirección X actual
+  dy: number; // Dirección Y actual
   parent?: Node;
 };
 class MinHeap<T> {
   arr: T[] = [];
   constructor(private cmp: (a: T, b: T) => number) {}
-
   push(v: T) {
     this.arr.push(v);
     this.arr.sort(this.cmp);
@@ -26,13 +28,19 @@ class MinHeap<T> {
     return this.arr.length === 0;
   }
 }
-
 export class WireRouter {
   static heuristic(a: Node, b: Node) {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
   }
 
-  static route(grid: GridManager, a: Vector2D, b: Vector2D): Vector2D[] {
+  static route(
+    grid: GridManager,
+    a: Vector2D,
+    b: Vector2D,
+    startDir?: Vector2D,
+    endDir?: Vector2D,
+    currentWire?: Wire,
+  ): Vector2D[] {
     const start = grid.worldToGrid(a);
     const end = grid.worldToGrid(b);
 
@@ -43,16 +51,23 @@ export class WireRouter {
     const startKey = hashPos(start.x, start.y);
     gScore.set(startKey, 0);
 
-    open.push({ ...start, g: 0, h: 0, f: 0 });
+    // Iniciamos empujando en la dirección del stub para evitar que vuelva hacia atrás
+    open.push({
+      ...start,
+      g: 0,
+      h: 0,
+      f: 0,
+      dx: startDir?.x || 0,
+      dy: startDir?.y || 0,
+    });
 
-    const MAX_ITER = 5000; // watchdog
+    const MAX_ITER = 5000;
     let iter = 0;
 
+    const TURN_PENALTY = 20; // Penalización media para evitar zig-zags, pero permitir maniobras
+
     while (!open.isEmpty()) {
-      if (++iter > MAX_ITER) {
-        console.warn("A* aborted: too many iterations");
-        return [];
-      }
+      if (++iter > MAX_ITER) return [];
 
       const cur = open.pop()!;
       const curKey = hashPos(cur.x, cur.y);
@@ -77,34 +92,52 @@ export class WireRouter {
       ];
 
       for (const [dx, dy] of dirs) {
+        // Evitar que el cable intente devolverse por donde vino
+        if (cur.dx === -dx && cur.dy === -dy) continue;
+
         const nx = cur.x + dx;
         const ny = cur.y + dy;
         const key = hashPos(nx, ny);
 
-        if (!grid.isWalkable(nx, ny)) continue;
+        const cellCost = grid.getCellCost(nx, ny, currentWire);
+        if (cellCost === Infinity) continue;
         if (closed.has(key)) continue;
 
-        const tentativeG = cur.g + 1;
+        let movementCost = cellCost;
+
+        // Penalización por giro simple (Ya no hay penalización extra de pin)
+        if (cur.dx !== 0 || cur.dy !== 0) {
+          if (cur.dx !== dx || cur.dy !== dy) {
+            movementCost += TURN_PENALTY;
+          }
+        }
+
+        const tentativeG = cur.g + movementCost;
         const oldG = gScore.get(key);
 
         if (oldG !== undefined && tentativeG >= oldG) continue;
 
         gScore.set(key, tentativeG);
+        const h = this.heuristic(
+          { x: nx, y: ny } as Node,
+          { x: end.x, y: end.y } as Node,
+        );
 
-        const h = this.heuristic({ x: nx, y: ny } as any, end as Node);
         open.push({
           x: nx,
           y: ny,
           g: tentativeG,
           h,
           f: tentativeG + h,
+          dx,
+          dy,
           parent: cur,
         });
       }
     }
-
     return [];
   }
+
   static simplifyPath(points: Vector2D[]) {
     const out = [points[0]];
 

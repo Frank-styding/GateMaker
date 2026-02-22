@@ -41,7 +41,7 @@ export class WireTool implements Tool {
           } else {
             this.current.endWire(node, connector.name!, pos);
             this.root.addChild(this.current);
-            this.current.recalc(this.grid);
+            //this.current.recalc(this.grid);
             this.current.forceLayoutUpdate();
             this.current = null;
             this.unLock();

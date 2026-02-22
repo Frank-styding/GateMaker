@@ -1,10 +1,11 @@
 import { type Entity, Vector2D } from "../core";
 import { NodeEntity } from "../Entities/NodeEntity";
+import type { Wire } from "../Entities/Wire";
 import { fastFloor, hashPos } from "./utils";
 
 export class GridManager {
-  private memory: Map<number, Entity[]> = new Map();
-
+  memory: Map<number, Entity[]> = new Map();
+  wireMemory: Map<number, Set<Wire>> = new Map();
   static CELL_SIZE = 50;
   static get CELL_SIZE_INV() {
     return 1 / this.CELL_SIZE;
@@ -19,7 +20,6 @@ export class GridManager {
 
     const startCol =
       baseCol - (e.colSpan % 2 == 0 ? e.colSpan / 2 : (e.colSpan - 1) / 2);
-
     const startRow =
       baseRow - (e.rowSpan % 2 == 0 ? e.rowSpan / 2 : (e.rowSpan - 1) / 2);
 
@@ -48,7 +48,6 @@ export class GridManager {
       }
     }
   }
-
   unregisterEntity(e: NodeEntity) {
     for (const key of e._cells) {
       const cell = this.memory.get(key);
@@ -57,11 +56,44 @@ export class GridManager {
       const idx = cell.indexOf(e);
       if (idx !== -1) cell.splice(idx, 1);
 
-      // cleanup empty cells
       if (cell.length === 0) this.memory.delete(key);
     }
-
     e._cells.length = 0;
+  }
+
+  public getCellCost(col: number, row: number, currentWire?: Wire): number {
+    if (!this.isWalkable(col, row)) return Infinity;
+
+    let cost = 10; // BASE_COST
+
+    // Padding suave: +5 de costo por estar tocando el perímetro de un nodo
+    const paddingDirs = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
+    for (const [dx, dy] of paddingDirs) {
+      if (!this.isWalkable(col + dx, row + dy)) {
+        cost += 5;
+        break; // Solo multar una vez
+      }
+    }
+
+    // Costo por cruzar otro cable
+    const key = hashPos(col, row);
+    const wiresInCell = this.wireMemory.get(key);
+    if (wiresInCell && wiresInCell.size > 0) {
+      if (
+        !currentWire ||
+        !wiresInCell.has(currentWire) ||
+        wiresInCell.size > 1
+      ) {
+        cost += 50;
+      }
+    }
+
+    return cost;
   }
 
   updateEntity(e: NodeEntity) {
@@ -73,7 +105,6 @@ export class GridManager {
     const col = fastFloor(x * inv);
     const row = fastFloor(y * inv);
     const key = hashPos(col, row);
-
     return this.memory.get(key) ?? [];
   }
 
@@ -124,6 +155,37 @@ export class GridManager {
 
     return false;
   }
+  registerWirePath(wire: Wire, path: Vector2D[]) {
+    this.unregisterWire(wire); // Limpiar el rastro anterior primero
+
+    for (const p of path) {
+      const { x: col, y: row } = this.worldToGrid(p);
+      const key = hashPos(col, row);
+
+      let cellWires = this.wireMemory.get(key);
+      if (!cellWires) {
+        cellWires = new Set();
+        this.wireMemory.set(key, cellWires);
+      }
+      cellWires.add(wire);
+
+      // Guardamos las claves en el cable para poder borrarlo rápido después
+      wire._cells = wire._cells || [];
+      wire._cells.push(key);
+    }
+  }
+
+  unregisterWire(wire: Wire) {
+    if (!wire._cells) return;
+    for (const key of wire._cells) {
+      const cellWires = this.wireMemory.get(key);
+      if (cellWires) {
+        cellWires.delete(wire);
+        if (cellWires.size === 0) this.wireMemory.delete(key);
+      }
+    }
+    wire._cells.length = 0;
+  }
 
   public isWalkable(col: number, row: number): boolean {
     const key = hashPos(col, row);
@@ -165,5 +227,39 @@ export class GridManager {
     const s = this.CELL_SIZE;
     p.x = (Math.floor(p.x / s) + 0.5) * s;
     p.y = (Math.floor(p.y / s) + 0.5) * s;
+  }
+
+  public recalcWiresOptimized(wires: Wire[], grid: GridManager) {
+    for (const wire of wires) {
+      grid.unregisterWire(wire);
+    }
+
+    // 2. Ordenamos los cables de menor a mayor distancia
+    wires.sort((a, b) => {
+      const posA1 = a.startNode.getConnectorPos(a.startPin);
+      const posA2 = a.endNode.getConnectorPos(a.endPin);
+
+      const posB1 = b.startNode.getConnectorPos(b.startPin);
+      const posB2 = b.endNode.getConnectorPos(b.endPin);
+
+      // Fallback de seguridad por si algún pin no existe
+      if (!posA1 || !posA2 || !posB1 || !posB2) return 0;
+
+      // Distancia Manhattan (más rápida de calcular que la Euclidiana)
+      const distA = Math.abs(posA1.x - posA2.x) + Math.abs(posA1.y - posA2.y);
+      const distB = Math.abs(posB1.x - posB2.x) + Math.abs(posB1.y - posB2.y);
+
+      if (distA < distB) return -1;
+      if (distA > distB) return 1;
+
+      if (a.id < b.id) return -1;
+      if (a.id > b.id) return 1;
+      return 0;
+    });
+
+    for (const wire of wires) {
+      wire.recalc(grid);
+      wire.forceLayoutUpdate();
+    }
   }
 }

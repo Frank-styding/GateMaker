@@ -4,7 +4,7 @@ import { WireRouter } from "../editor/WireRouter";
 import type { NodeEntity } from "./NodeEntity";
 
 export class Wire extends Entity {
-  static LINE_HEIGHT: number = 14;
+  static LINE_HEIGHT: number = 10;
 
   public startNode!: NodeEntity;
   public endNode!: NodeEntity;
@@ -14,6 +14,7 @@ export class Wire extends Entity {
   public startPos: Vector2D;
   public endPos: Vector2D;
   public path: Vector2D[];
+  _cells: number[] = [];
   constructor() {
     super();
     this.path = [];
@@ -58,8 +59,11 @@ export class Wire extends Entity {
     this.endPin = name;
     this.endPos.set(pos);
 
-    this.endNode.setWirePos(this.endPin, this);
-    this.startNode.setWirePos(this.startPin, this);
+    this.endNode.setWirePos(this.endPin, this, this.endPos);
+    this.startNode.setWirePos(this.startPin, this, this.startPos);
+    this.path.length = 0;
+    this.path.push(this.startPos);
+    this.path.push(this.endPos);
   }
 
   public moveLastPoint(pos: Vector2D) {
@@ -72,6 +76,7 @@ export class Wire extends Entity {
     ctx.beginPath();
     ctx.lineWidth = Wire.LINE_HEIGHT;
     ctx.lineJoin = "round";
+
     if (this.path.length > 0) {
       for (let i = 0; i < this.path.length; i++) {
         const p = this.path[i];
@@ -95,11 +100,34 @@ export class Wire extends Entity {
   }
 
   recalc(grid: GridManager) {
+    // 1. Borrar el rastro actual de este cable antes de recalcular
+    grid.unregisterWire(this);
+
     const a = this.startNode.getConnectorPos(this.startPin)!;
     const b = this.endNode.getConnectorPos(this.endPin)!;
-    let path = WireRouter.route(grid, a as Vector2D, b as Vector2D);
+
+    const startDir = new Vector2D(a.x > this.startNode.pos.x ? 1 : -1, 0);
+    const endDir = new Vector2D(b.x < this.endNode.pos.x ? -1 : 1, 0);
+
+    // 2. Calcular la ruta pasándole 'this' para que ignore sus propios restos si los hubiera
+    let path = WireRouter.route(
+      grid,
+      a as Vector2D,
+      b as Vector2D,
+      startDir,
+      endDir,
+      this,
+    );
+
     path = [a as Vector2D, ...path, b as Vector2D];
+
+    // NOTA: Para registrar el cable en el grid, necesitamos todos los puntos celda por celda.
+    // Registramos la ruta antes de simplificarla.
+    grid.registerWirePath(this, path);
+
+    // 3. Simplificamos para el renderizado
     path = WireRouter.simplifyPath(path);
+
     this.path.length = 0;
     for (const i of path) this.path.push(i);
     this.markDirty();

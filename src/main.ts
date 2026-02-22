@@ -11,4 +11,5 @@ button.innerHTML = "TEST";
 button.addEventListener("click", () => {});
 
 $app!.appendChild(engine.getCanvas());
+$app!.appendChild(engine.getContextMenu());
 engine.start();

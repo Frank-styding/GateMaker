@@ -42,7 +42,7 @@ export class NodeEntity extends Entity {
   public _lastCol?: number;
   public _lastRow?: number;
 
-  private wiresPos: Record<string, Wire[]> = {};
+  private wiresPos: Record<string, { wire: Wire; pos: Vector2D }[]> = {};
 
   constructor() {
     super();
@@ -224,15 +224,25 @@ export class NodeEntity extends Entity {
     return { x, y };
   }
 
-  public setWirePos(name: string, wire: Wire) {
+  public setWirePos(name: string, wire: Wire, pos: Vector2D) {
     this.wiresPos[name] ??= [];
-    this.wiresPos[name].push(wire);
+    this.wiresPos[name].push({ wire, pos });
+  }
+
+  protected onDirty(): void {
+    for (const name in this.wiresPos) {
+      const pos = this.getConnectorPos(name);
+      this.wiresPos[name].forEach((item) => {
+        item.pos.set(pos);
+        item.wire.markDirty();
+      });
+    }
   }
 
   public getConnectedWires() {
     const wires: Wire[] = [];
     for (const item in this.wiresPos) {
-      wires.push(...this.wiresPos[item]);
+      wires.push(...this.wiresPos[item].map((item) => item.wire));
     }
     return wires;
   }

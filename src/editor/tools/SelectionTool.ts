@@ -29,9 +29,9 @@ export class SelectionTool implements Tool {
   isWire!: boolean;
 
   unLock!: () => void;
-  private selectedNodes: NodeEntity[] = [];
-  private selectedWires: Wire[] = [];
-  private activeWires = new Map<string, Wire>();
+  selectedNodes: NodeEntity[] = [];
+  selectedWires: Wire[] = [];
+  activeWires = new Map<string, Wire>();
   wireSelectionOnly = false;
   init(ctx: ToolContext): void {
     this.display = ctx.display;
@@ -48,7 +48,7 @@ export class SelectionTool implements Tool {
 
   // ---------------- MOUSE DOWN ----------------
   onDown(e: MouseData, hit?: Entity): void {
-    if (e.button != MouseButton.LEFT) return;
+    //if (e.button != MouseButton.LEFT) return;
     const v = this.display.screenToWorldVector(e);
 
     // Drag selection box
@@ -80,6 +80,8 @@ export class SelectionTool implements Tool {
     this.draggingSelection = false;
     this.isWire = false;
     this.wireSelectionOnly = false; // ✅
+    this.selectedNodes.length = 0;
+    this.selectedWires.length = 0;
     this.start.set(v);
     this.end.set(v.clone());
     this.box.setFromTwoPoints(this.start, this.end);
@@ -129,11 +131,6 @@ export class SelectionTool implements Tool {
       return;
     }
 
-    // Hide wires ONLY during drag
-    for (const wire of this.activeWires.values()) {
-      wire.hide = true;
-    }
-
     const dx = v.x - this.lastMouse.x;
     const dy = v.y - this.lastMouse.y;
     if (dx === 0 && dy === 0) return;
@@ -165,11 +162,9 @@ export class SelectionTool implements Tool {
       });
 
       // Recalc wires & show again
-      for (const wire of this.activeWires.values()) {
-        wire.recalc(this.grid);
-        wire.forceLayoutUpdate();
-        wire.hide = false;
-      }
+      //const wiresArray = Array.from(this.activeWires.values());
+      //this.grid.recalcWiresOptimized(wiresArray, this.grid);
+      //wiresArray.forEach((item) => (item.hide = false));
 
       this.activeWires.clear();
       this.box.set(Entity.calcBounding(this.out));

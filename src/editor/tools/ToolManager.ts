@@ -10,11 +10,15 @@ import { WireTool } from "./WireTool";
 import { SelectionTool } from "./SelectionTool";
 import { Wire } from "../../Entities/Wire";
 import type { GridManager } from "../GridManager";
+import { ContextMenuTool } from "./ContextMenu";
+import type { ContextMenu } from "../ContextMenu";
 
 export interface ToolContext {
   root: Entity;
   display: RenderLayer;
   grid: GridManager;
+  tools: ToolManager;
+  contextMenu: ContextMenu;
   select(entities: Entity[]): void;
   unLock(): void;
 }
@@ -36,6 +40,7 @@ export class ToolManager {
   mouse: MouseController;
   tools = new Map<string, Tool>();
   current: Tool | null = null;
+  prev: Tool | null = null;
 
   private hits: Entity[] = [];
   private ctx: ToolContext;
@@ -44,6 +49,7 @@ export class ToolManager {
     public display: RenderLayer,
     public root: Entity,
     public grid: GridManager,
+    public contextMenu: ContextMenu,
   ) {
     this.mouse = new MouseController(display.getCanvas());
 
@@ -51,6 +57,8 @@ export class ToolManager {
       grid,
       root,
       display,
+      contextMenu,
+      tools: this,
       select: (entities) => {
         console.log("Selected:", entities);
       },
@@ -66,6 +74,7 @@ export class ToolManager {
     this.register(new CameraTool());
     this.register(new WireTool());
     this.register(new SelectionTool());
+    this.register(new ContextMenuTool());
   }
 
   register(tool: Tool) {
@@ -74,12 +83,13 @@ export class ToolManager {
   }
 
   use(name: string) {
-    if (this.current?.name == name) return;
     this.current?.reset?.();
+    this.prev = this.current;
     this.current = this.tools.get(name) ?? null;
   }
 
   restore() {
+    this.prev = this.current;
     this.current = null;
   }
 
@@ -132,6 +142,7 @@ export class ToolManager {
       const hit = this.getHits(new Vector2D(we));
       this.autoSelectTool(hit, we);
       this.current?.onDown?.(e, hit);
+      this.tools.get("context_menu")?.onDown?.(e);
     });
     this.mouse.on(MouseEventType.DRAG, (e) => {
       this.tools.get("camera")?.onDrag?.(e);

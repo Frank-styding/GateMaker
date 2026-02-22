@@ -3,6 +3,7 @@ import { AndEntity } from "../Entities/gates/AndEntity";
 import { NotEntity } from "../Entities/gates/NotEntity";
 import { OrEntity } from "../Entities/gates/OrEntity";
 import { NodeEntity } from "../Entities/NodeEntity";
+import { ContextMenu } from "./ContextMenu";
 import { GridManager } from "./GridManager";
 import { initGridPattern } from "./GridPattern";
 import { ToolManager } from "./tools/ToolManager";
@@ -10,13 +11,24 @@ import { ToolManager } from "./tools/ToolManager";
 export class App extends Engine {
   public tools!: ToolManager;
   public grid!: GridManager;
+  public contextMenu!: ContextMenu;
+
+  constructor() {
+    super();
+    this.contextMenu = new ContextMenu();
+  }
 
   public init(): void {
     const pattern = initGridPattern(this.display.getContext());
     this.display.setPattern(pattern);
     this.display.setZoomLimits(0.3, 1.7);
     this.grid = new GridManager();
-    this.tools = new ToolManager(this.display, this.root, this.grid);
+    this.tools = new ToolManager(
+      this.display,
+      this.root,
+      this.grid,
+      this.contextMenu,
+    );
     //? ---------------------------------------
     this.display.panX = this.display.width / 2 - 200;
     this.display.panY = this.display.height / 2;
@@ -47,6 +59,9 @@ export class App extends Engine {
     if (e instanceof NodeEntity) {
       e.initGrid(this.grid);
     }
+  }
+  public getContextMenu() {
+    return this.contextMenu.getElement();
   }
 
   protected render(ctx: CanvasRenderingContext2D): void {
