@@ -1,10 +1,4 @@
-import {
-  Entity,
-  EventEmitter,
-  Vector2D,
-  type MouseData,
-  type RenderLayer,
-} from "../../core";
+import { Entity, Vector2D, type MouseData, type RenderLayer } from "../../core";
 import {
   MouseButton,
   MouseController,
@@ -17,22 +11,12 @@ import { SelectionTool } from "./SelectionTool";
 import { Wire } from "../../Entities/Wire";
 import type { GridManager } from "../GridManager";
 import { ContextMenuTool } from "./ContextMenu";
-import type { ContextMenu } from "../ContextMenu";
-
-export interface ToolContext {
-  root: Entity;
-  display: RenderLayer;
-  grid: GridManager;
-  tools: ToolManager;
-  events: EventEmitter<Record<string, any>>;
-  select(entities: Entity[]): void;
-  unLock(): void;
-}
+import { AppEvents } from "../Events";
 
 export interface Tool {
   lock: boolean;
   name: string;
-  init?(ctx: ToolContext): void;
+  init?(): void;
   onDown?(e: MouseData, hits?: Entity): void;
   onDrag?(e: MouseData): void;
   onUp?(e: MouseData): void;
@@ -49,29 +33,19 @@ export class ToolManager {
   prev: Tool | null = null;
 
   private hits: Entity[] = [];
-  private ctx: ToolContext;
+  public display!: RenderLayer;
+  public root!: Entity;
+  public grid!: GridManager;
 
-  constructor(
-    public display: RenderLayer,
-    public root: Entity,
-    public grid: GridManager,
-    public events: EventEmitter<Record<string, any>>
-  ) {
-    this.mouse = new MouseController(display.getCanvas());
+  constructor() {
+    this.display = AppEvents.get("display")!;
+    this.root = AppEvents.get("root")!;
+    this.grid = AppEvents.get("grid")!;
 
-    this.ctx = {
-      grid,
-      root,
-      display,
-      events,
-      tools: this,
-      select: (entities) => {
-        console.log("Selected:", entities);
-      },
-      unLock: () => {
-        this.restore();
-      },
-    };
+    AppEvents.send("tools", () => this);
+    AppEvents.on("unLockTool", () => this.restore());
+
+    this.mouse = new MouseController(this.display.getCanvas());
     this.initTools();
     this.initEvents();
   }
@@ -84,7 +58,7 @@ export class ToolManager {
   }
 
   register(tool: Tool) {
-    tool.init?.(this.ctx);
+    tool.init?.();
     this.tools.set(tool.name, tool);
   }
 
@@ -130,12 +104,11 @@ export class ToolManager {
   getHits(pos: Vector2D): Entity | undefined {
     this.hits.length = 0;
     const item = this.grid.queryPoint(pos.x, pos.y);
-
     if (item.length > 0) {
       return item[0];
     }
     Entity.collect(this.root, this.hits, (ent) =>
-      ent.getAABB().mouseIsInside(pos)
+      ent.getAABB().mouseIsInside(pos),
     );
     this.hits.sort((a, b) => b.layerIdx - a.layerIdx);
     return this.hits.find((e) => e.getCollider()?.mouseIsInside(pos));

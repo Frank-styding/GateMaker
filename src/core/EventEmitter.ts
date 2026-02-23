@@ -1,21 +1,13 @@
-// EventEmitter.ts
-
-// Tipo auxiliar para definir el manejador (callback)
 type Listener<T> = (data: T) => void;
+type Provider<R> = () => R;
 
-export class EventEmitter<EventMap> {
-  // Almacenamos los listeners en un Map donde:
-  // Clave: Nombre del evento
-  // Valor: Array de funciones (Set es más lento para iterar, Array es mejor para emitir rápido)
+export class EventEmitter<EventMap, RequestMap = any> {
   private listeners: Map<keyof EventMap, Listener<any>[]> = new Map();
+  private providers: Map<keyof RequestMap, Provider<any>> = new Map();
 
-  /**
-   * Suscribirse a un evento
-   * @returns Una función para desuscribirse (unsub)
-   */
   public on<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>
+    listener: Listener<EventMap[K]>,
   ): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -23,68 +15,74 @@ export class EventEmitter<EventMap> {
     const list = this.listeners.get(event)!;
     list.push(listener);
 
-    // Devolvemos una función para cancelar la suscripción fácilmente
     return () => this.off(event, listener);
   }
 
-  /**
-   * Desuscribirse de un evento
-   */
   public off<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>
+    listener: Listener<EventMap[K]>,
   ): void {
     const list = this.listeners.get(event);
     if (!list) return;
 
-    // Filtramos para eliminar el listener
-    // OPTIMIZACIÓN: Si tienes miles de listeners, usar splice con indexOf es más rápido que filter
     const index = list.indexOf(listener);
     if (index !== -1) {
       list.splice(index, 1);
     }
 
-    // Limpieza de memoria si no quedan listeners
     if (list.length === 0) {
       this.listeners.delete(event);
     }
   }
 
-  /**
-   * Emitir un evento
-   */
   public emit<K extends keyof EventMap>(event: K, data?: EventMap[K]): void {
     const list = this.listeners.get(event);
     if (!list) return;
 
-    // Hacemos una copia superficial del array [...list] para iterar.
-    // ¿Por qué? Porque si un listener hace .off() mientras emitimos,
-    // el bucle for original se rompería o saltaría elementos.
     const runList = [...list];
-
     for (let i = 0; i < runList.length; i++) {
-      runList[i](data);
+      runList[i](data!);
     }
   }
 
-  /**
-   * Suscribirse una sola vez
-   */
   public once<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>
+    listener: Listener<EventMap[K]>,
   ): void {
     const wrapper = (data: EventMap[K]) => {
-      this.off(event, wrapper); // Se borra a sí mismo
+      this.off(event, wrapper);
       listener(data);
     };
     this.on(event, wrapper);
   }
 
-  /**
-   * Borrar todos los eventos (útil al cambiar de escena/nivel)
-   */
+  public send<K extends keyof RequestMap>(
+    name: K,
+    provider: Provider<RequestMap[K]>,
+  ): () => void {
+    this.providers.set(name, provider);
+
+    return () => {
+      // Solo eliminamos si el proveedor actual sigue siendo el que registramos
+      if (this.providers.get(name) === provider) {
+        this.providers.delete(name);
+      }
+    };
+  }
+
+  public get<K extends keyof RequestMap>(name: K): RequestMap[K] | undefined {
+    const provider = this.providers.get(name);
+
+    if (provider) {
+      return provider();
+    }
+
+    console.warn(`[EventEmitter] Provider don't exits: ${String(name)}`);
+    return undefined;
+  }
+
   public clear(): void {
     this.listeners.clear();
+    this.providers.clear();
   }
 }

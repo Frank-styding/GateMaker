@@ -8,8 +8,9 @@ import {
 import { AABB } from "../../core/AABB";
 import { NodeEntity } from "../../Entities/NodeEntity";
 import { Wire } from "../../Entities/Wire";
+import { AppEvents } from "../Events";
 import { GridManager } from "../GridManager";
-import type { Tool, ToolContext } from "./ToolManager";
+import type { Tool } from "./ToolManager";
 
 export class SelectionTool implements Tool {
   name = "selection";
@@ -18,6 +19,7 @@ export class SelectionTool implements Tool {
   start!: Vector2D;
   end!: Vector2D;
   box!: AABB;
+
   display!: RenderLayer;
   grid!: GridManager;
   root!: Entity;
@@ -28,18 +30,16 @@ export class SelectionTool implements Tool {
   lastMouse!: Vector2D;
   isWire!: boolean;
 
-  unLock!: () => void;
   selectedNodes: NodeEntity[] = [];
   selectedWires: Wire[] = [];
   activeWires = new Map<string, Wire>();
   wireSelectionOnly = false;
-  init(ctx: ToolContext): void {
-    this.display = ctx.display;
-    this.root = ctx.root;
-    this.grid = ctx.grid;
-    this.out = [];
-    this.unLock = ctx.unLock;
 
+  init(): void {
+    this.display = AppEvents.get("display")!;
+    this.grid = AppEvents.get("grid")!;
+    this.root = AppEvents.get("root")!;
+    this.out = [];
     this.start = new Vector2D();
     this.end = new Vector2D();
     this.box = new AABB();
@@ -51,7 +51,6 @@ export class SelectionTool implements Tool {
     //if (e.button != MouseButton.LEFT) return;
     const v = this.display.screenToWorldVector(e);
 
-    // Drag selection box
     if (this.active && this.box.mouseIsInside(v) && !this.isWire) {
       this.draggingSelection = true;
       this.lastMouse.set(v);
@@ -59,7 +58,6 @@ export class SelectionTool implements Tool {
       return;
     }
 
-    // Single entity selection
     if (hit) {
       this.out.length = 0;
       this.out.push(hit);
@@ -67,7 +65,7 @@ export class SelectionTool implements Tool {
       this.active = true;
 
       this.isWire = hit instanceof Wire;
-      this.draggingSelection = !this.isWire; // ❗ wires can't drag
+      this.draggingSelection = !this.isWire;
       this.wireSelectionOnly = this.isWire;
       this.lastMouse.set(v);
       this.cacheSelection();
@@ -75,11 +73,10 @@ export class SelectionTool implements Tool {
       return;
     }
 
-    // Area selection start
     this.active = false;
     this.draggingSelection = false;
     this.isWire = false;
-    this.wireSelectionOnly = false; // ✅
+    this.wireSelectionOnly = false;
     this.selectedNodes.length = 0;
     this.selectedWires.length = 0;
     this.start.set(v);
@@ -178,7 +175,8 @@ export class SelectionTool implements Tool {
       );
 
       if (this.out.length === 0) {
-        this.unLock();
+        AppEvents.emit("unLockTool");
+        //this.unLock();
         this.active = false;
       } else {
         this.active = true;

@@ -1,9 +1,10 @@
-import { Engine, Entity, EventEmitter, Vector2D } from "../core";
+import { Engine, Entity, Vector2D } from "../core";
 import { AndEntity } from "../Entities/gates/AndEntity";
 import { NotEntity } from "../Entities/gates/NotEntity";
 import { OrEntity } from "../Entities/gates/OrEntity";
 import { NodeEntity } from "../Entities/NodeEntity";
 import { ContextMenu } from "./ContextMenu";
+import { AppEvents } from "./Events";
 import { GridManager } from "./GridManager";
 import { initGridPattern } from "./GridPattern";
 import { ToolManager } from "./tools/ToolManager";
@@ -12,12 +13,13 @@ export class App extends Engine {
   public tools!: ToolManager;
   public grid!: GridManager;
   public contextMenu!: ContextMenu;
-  public events: EventEmitter<Record<string, any>>;
 
   constructor() {
     super();
-    this.events = new EventEmitter();
-    this.contextMenu = new ContextMenu(this.events);
+    this.contextMenu = new ContextMenu();
+    AppEvents.send("display", () => this.display);
+    AppEvents.send("grid", () => this.grid);
+    AppEvents.send("root", () => this.root);
   }
 
   public init(): void {
@@ -25,12 +27,7 @@ export class App extends Engine {
     this.display.setPattern(pattern);
     this.display.setZoomLimits(0.3, 1.7);
     this.grid = new GridManager();
-    this.tools = new ToolManager(
-      this.display,
-      this.root,
-      this.grid,
-      this.events
-    );
+    this.tools = new ToolManager();
     //? ---------------------------------------
     this.display.panX = this.display.width / 2 - 200;
     this.display.panY = this.display.height / 2;

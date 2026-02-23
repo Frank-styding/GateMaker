@@ -7,8 +7,8 @@ import {
 } from "../../core";
 import { NodeEntity } from "../../Entities/NodeEntity";
 import { Wire } from "../../Entities/Wire";
-import type { GridManager } from "../GridManager";
-import type { Tool, ToolContext } from "./ToolManager";
+import { AppEvents } from "../Events";
+import type { Tool } from "./ToolManager";
 
 export class WireTool implements Tool {
   name = "wire";
@@ -16,14 +16,11 @@ export class WireTool implements Tool {
   current: Wire | null = null;
   display!: RenderLayer;
   root!: Entity;
-  grid!: GridManager;
-  unLock!: () => void;
+  //unLock!: () => void;
 
-  init(ctx: ToolContext): void {
-    this.display = ctx.display;
-    this.root = ctx.root;
-    this.grid = ctx.grid;
-    this.unLock = ctx.unLock;
+  init(): void {
+    this.root = AppEvents.get("root")!;
+    this.display = AppEvents.get("display")!;
   }
 
   onDown(e: MouseData, hits?: Entity): void {
@@ -44,13 +41,14 @@ export class WireTool implements Tool {
             //this.current.recalc(this.grid);
             this.current.forceLayoutUpdate();
             this.current = null;
-            this.unLock();
+            AppEvents.emit("unLockTool");
+            //this.unLock();
           }
         }
       }
     } else {
       this.current = null;
-      this.unLock();
+      AppEvents.emit("unLockTool");
     }
   }
 

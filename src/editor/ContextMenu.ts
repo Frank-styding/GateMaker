@@ -1,9 +1,10 @@
-import { EventEmitter } from "../core";
 import type { NodeEntity } from "../Entities/NodeEntity";
 import type { Wire } from "../Entities/Wire";
+import { AppEvents } from "./Events";
 
 export type ContextMenuOption = {
   name: string;
+  id: string;
   color?: string;
   icon?: string;
 };
@@ -11,30 +12,26 @@ export type ContextMenuOption = {
 export class ContextMenu {
   element: HTMLDivElement;
   options: ContextMenuOption[] = [];
-  events: EventEmitter<Record<string, any>>;
   wires: Wire[] = [];
   nodes: NodeEntity[] = [];
 
-  constructor(events: EventEmitter<Record<string, any>>) {
+  constructor() {
     this.element = document.createElement("div");
     this.element.classList.add("context-menu");
-    this.events = events;
 
-    events.on("setContextMenu", (options) => {
+    AppEvents.on("setContextMenu", (options) => {
       this.setOptions(options);
       this.buildContextMenu();
     });
 
-    events.on("openContextMenu", ({ x, y, wires, nodes }) => {
+    AppEvents.on("openContextMenu", ({ x, y, wires, nodes }) => {
       this.setPos(x, y);
       this.wires = wires;
       this.nodes = nodes;
       this.show();
     });
 
-    events.on("closeContextMenu", () => {
-      this.hide();
-    });
+    AppEvents.on("closeContextMenu", () => this.hide());
   }
 
   setPos(x: number, y: number) {
@@ -58,12 +55,16 @@ export class ContextMenu {
     <label>${optionData.name}</label>
     `;
     option.addEventListener("click", () => {
-      this.events.emit(optionData.name, optionData);
+      AppEvents.emit(`on_context_${optionData.id}`, {
+        wires: this.wires,
+        nodes: this.nodes,
+      });
     });
     return option;
   }
 
   buildContextMenu() {
+    this.element.innerHTML = "";
     this.options.forEach((item) => {
       this.element.appendChild(this.createOption(item));
     });

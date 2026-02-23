@@ -55,6 +55,8 @@ export class MouseController {
   private initEvents() {
     // CLICK
     this.element.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const pos = this.getPos(e);
       this.emit(MouseEventType.CLICK, { ...pos, button: 0 });
     });
@@ -63,6 +65,8 @@ export class MouseController {
 
     // DOWN
     this.element.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const pos = this.getPos(e);
 
       if (!down) {
@@ -80,6 +84,8 @@ export class MouseController {
 
     // UP
     this.element.addEventListener("pointerup", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const pos = this.getPos(e);
 
       if (down) {
@@ -97,6 +103,8 @@ export class MouseController {
 
     // MOVE / DRAG
     this.element.addEventListener("pointermove", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const pos = this.getPos(e);
 
       if (this.isDragging && this.lastMouse && this.dragStart) {
@@ -124,6 +132,7 @@ export class MouseController {
     // WHEEL
     this.element.addEventListener("wheel", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const pos = { ...this.getPos(e), delta: e.deltaY };
       this.emit(MouseEventType.WHEEL, { ...pos, button: e.buttons });
     });
@@ -131,9 +140,16 @@ export class MouseController {
     // * block events
     this.element.addEventListener("contextmenu", (e) => {
       e.preventDefault();
+      e.stopPropagation();
     });
-    this.element.addEventListener("dragstart", (e) => e.preventDefault());
-    this.element.addEventListener("selectstart", (e) => e.preventDefault());
+    this.element.addEventListener("dragstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    this.element.addEventListener("selectstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
 
   private emit(type: MouseEventType, pos: MouseData) {
