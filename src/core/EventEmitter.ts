@@ -15,7 +15,7 @@ export class EventEmitter<EventMap> {
    */
   public on<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>,
+    listener: Listener<EventMap[K]>
   ): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -32,7 +32,7 @@ export class EventEmitter<EventMap> {
    */
   public off<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>,
+    listener: Listener<EventMap[K]>
   ): void {
     const list = this.listeners.get(event);
     if (!list) return;
@@ -53,7 +53,7 @@ export class EventEmitter<EventMap> {
   /**
    * Emitir un evento
    */
-  public emit<K extends keyof EventMap>(event: K, data: EventMap[K]): void {
+  public emit<K extends keyof EventMap>(event: K, data?: EventMap[K]): void {
     const list = this.listeners.get(event);
     if (!list) return;
 
@@ -72,7 +72,7 @@ export class EventEmitter<EventMap> {
    */
   public once<K extends keyof EventMap>(
     event: K,
-    listener: Listener<EventMap[K]>,
+    listener: Listener<EventMap[K]>
   ): void {
     const wrapper = (data: EventMap[K]) => {
       this.off(event, wrapper); // Se borra a sí mismo

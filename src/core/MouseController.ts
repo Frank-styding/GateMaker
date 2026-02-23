@@ -9,14 +9,6 @@ export type MouseData = {
   button: number;
 };
 
-/* export type MouseEventType =
-  | "click"
-  | "down"
-  | "move"
-  | "up"
-  | "drag"
-  | "wheel";
- */
 export enum MouseEventType {
   CLICK,
   DOWN,
@@ -54,12 +46,12 @@ export class MouseController {
 
   private getPos(e: MouseEvent) {
     const rect = this.element.getBoundingClientRect();
+
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
   }
-
   private initEvents() {
     // CLICK
     this.element.addEventListener("click", (e) => {

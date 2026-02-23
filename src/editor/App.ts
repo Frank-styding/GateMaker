@@ -1,4 +1,4 @@
-import { Engine, Entity, Vector2D } from "../core";
+import { Engine, Entity, EventEmitter, Vector2D } from "../core";
 import { AndEntity } from "../Entities/gates/AndEntity";
 import { NotEntity } from "../Entities/gates/NotEntity";
 import { OrEntity } from "../Entities/gates/OrEntity";
@@ -12,10 +12,12 @@ export class App extends Engine {
   public tools!: ToolManager;
   public grid!: GridManager;
   public contextMenu!: ContextMenu;
+  public events: EventEmitter<Record<string, any>>;
 
   constructor() {
     super();
-    this.contextMenu = new ContextMenu();
+    this.events = new EventEmitter();
+    this.contextMenu = new ContextMenu(this.events);
   }
 
   public init(): void {
@@ -27,7 +29,7 @@ export class App extends Engine {
       this.display,
       this.root,
       this.grid,
-      this.contextMenu,
+      this.events
     );
     //? ---------------------------------------
     this.display.panX = this.display.width / 2 - 200;

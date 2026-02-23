@@ -1,5 +1,9 @@
-import { type MouseData, type Entity, MouseButton } from "../../core";
-import type { ContextMenu } from "../ContextMenu";
+import {
+  type MouseData,
+  type Entity,
+  MouseButton,
+  EventEmitter,
+} from "../../core";
 import type { SelectionTool } from "./SelectionTool";
 import type { Tool, ToolContext, ToolManager } from "./ToolManager";
 
@@ -7,20 +11,30 @@ export class ContextMenuTool implements Tool {
   lock: boolean = false;
   name: string = "context_menu";
   tools!: ToolManager;
-  contextMenu!: ContextMenu;
+  events!: EventEmitter<Record<string, any>>;
 
   init(ctx: ToolContext): void {
     this.tools = ctx.tools;
-    this.contextMenu = ctx.contextMenu;
-    this.contextMenu.addOption({ name: "Delete" });
-    this.contextMenu.buildContextMenu();
+    this.events = ctx.events;
+    ctx.events.emit("setContextMenu", [
+      { name: "Copy" },
+      { name: "Paste" },
+      { name: "Delete", color: "red" },
+    ]);
   }
 
   onDown(e: MouseData, hits?: Entity): void {
-    if (e.button != MouseButton.RIGHT) return;
+    if (e.button != MouseButton.RIGHT) {
+      this.events.emit("closeContextMenu");
+      return;
+    }
     if (this.tools.prev?.name == "wire") return;
     const selection = this.tools.tools.get("selection") as SelectionTool;
-    console.log(selection.selectedNodes, selection.selectedWires);
-    console.log("open context menu");
+    this.events.emit("openContextMenu", {
+      x: e.x,
+      y: e.y,
+      wires: selection.selectedWires,
+      nodes: selection.selectedNodes,
+    });
   }
 }

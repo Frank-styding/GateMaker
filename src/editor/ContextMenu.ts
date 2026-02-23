@@ -1,4 +1,6 @@
 import { EventEmitter } from "../core";
+import type { NodeEntity } from "../Entities/NodeEntity";
+import type { Wire } from "../Entities/Wire";
 
 export type ContextMenuOption = {
   name: string;
@@ -10,11 +12,29 @@ export class ContextMenu {
   element: HTMLDivElement;
   options: ContextMenuOption[] = [];
   events: EventEmitter<Record<string, any>>;
+  wires: Wire[] = [];
+  nodes: NodeEntity[] = [];
 
-  constructor() {
+  constructor(events: EventEmitter<Record<string, any>>) {
     this.element = document.createElement("div");
-    this.element.classList.add("context-menu", "open");
-    this.events = new EventEmitter();
+    this.element.classList.add("context-menu");
+    this.events = events;
+
+    events.on("setContextMenu", (options) => {
+      this.setOptions(options);
+      this.buildContextMenu();
+    });
+
+    events.on("openContextMenu", ({ x, y, wires, nodes }) => {
+      this.setPos(x, y);
+      this.wires = wires;
+      this.nodes = nodes;
+      this.show();
+    });
+
+    events.on("closeContextMenu", () => {
+      this.hide();
+    });
   }
 
   setPos(x: number, y: number) {
@@ -33,6 +53,7 @@ export class ContextMenu {
   createOption(optionData: ContextMenuOption) {
     const option = document.createElement("div");
     option.classList.add("context-menu-option");
+    option.style.color = optionData.color || "black";
     option.innerHTML = `
     <label>${optionData.name}</label>
     `;

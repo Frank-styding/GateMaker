@@ -1,4 +1,10 @@
-import { Entity, Vector2D, type MouseData, type RenderLayer } from "../../core";
+import {
+  Entity,
+  EventEmitter,
+  Vector2D,
+  type MouseData,
+  type RenderLayer,
+} from "../../core";
 import {
   MouseButton,
   MouseController,
@@ -18,7 +24,7 @@ export interface ToolContext {
   display: RenderLayer;
   grid: GridManager;
   tools: ToolManager;
-  contextMenu: ContextMenu;
+  events: EventEmitter<Record<string, any>>;
   select(entities: Entity[]): void;
   unLock(): void;
 }
@@ -49,7 +55,7 @@ export class ToolManager {
     public display: RenderLayer,
     public root: Entity,
     public grid: GridManager,
-    public contextMenu: ContextMenu,
+    public events: EventEmitter<Record<string, any>>
   ) {
     this.mouse = new MouseController(display.getCanvas());
 
@@ -57,7 +63,7 @@ export class ToolManager {
       grid,
       root,
       display,
-      contextMenu,
+      events,
       tools: this,
       select: (entities) => {
         console.log("Selected:", entities);
@@ -129,7 +135,7 @@ export class ToolManager {
       return item[0];
     }
     Entity.collect(this.root, this.hits, (ent) =>
-      ent.getAABB().mouseIsInside(pos),
+      ent.getAABB().mouseIsInside(pos)
     );
     this.hits.sort((a, b) => b.layerIdx - a.layerIdx);
     return this.hits.find((e) => e.getCollider()?.mouseIsInside(pos));

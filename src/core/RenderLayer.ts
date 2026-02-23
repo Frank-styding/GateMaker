@@ -101,27 +101,31 @@ export class RenderLayer {
 
     const worldBefore = this.screenToWorld(mouseEvent);
     const newZoom = this.zoom * zoomFactor;
+    const dpr = window.devicePixelRatio || 1;
+
     if (this.minZoom < newZoom && newZoom < this.maxZoom) {
       this.zoom *= zoomFactor;
-      this.panX = mouseEvent.x - worldBefore.x * this.zoom;
-      this.panY = mouseEvent.y - worldBefore.y * this.zoom;
+      this.panX = mouseEvent.x * dpr - worldBefore.x * this.zoom;
+      this.panY = mouseEvent.y * dpr - worldBefore.y * this.zoom;
     }
   }
 
   public screenToWorld(e: MouseData): MouseData {
+    const dpr = window.devicePixelRatio || 1;
     return {
       ...e,
-      x: (e.x - this.panX) / this.zoom,
-      y: (e.y - this.panY) / this.zoom,
-      dx: e.dx != undefined ? e.dx / this.zoom : undefined,
-      dy: e.dy != undefined ? e.dy / this.zoom : undefined,
+      x: (e.x * dpr - this.panX) / this.zoom,
+      y: (e.y * dpr - this.panY) / this.zoom,
+      dx: e.dx != undefined ? (e.dx * dpr) / this.zoom : undefined,
+      dy: e.dy != undefined ? (e.dy * dpr) / this.zoom : undefined,
     };
   }
 
   public screenToWorldVector(e: { x: number; y: number }): Vector2D {
+    const dpr = window.devicePixelRatio || 1;
     return new Vector2D({
-      x: (e.x - this.panX) / this.zoom,
-      y: (e.y - this.panY) / this.zoom,
+      x: (e.x * dpr - this.panX) / this.zoom,
+      y: (e.y * dpr - this.panY) / this.zoom,
     });
   }
 
@@ -138,7 +142,7 @@ export class RenderLayer {
     return new AABB(
       width,
       height,
-      new Vector2D(topLeft.x + width / 2, topLeft.y + height / 2),
+      new Vector2D(topLeft.x + width / 2, topLeft.y + height / 2)
     );
   }
 
