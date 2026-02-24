@@ -1,8 +1,12 @@
 export { EventEmitter } from "./EventEmitter";
 export { Vector2D } from "./Vector";
 export { AssetsManager } from "./AssetsManager";
-export { Entity } from "./Entity";
+export { Entity, HitFlags, type HitTestResult } from "./Entity";
 export { Engine } from "./Engine";
-export { BoxCollider, LineCollider } from "./Collider";
 export { RenderLayer } from "./RenderLayer";
 export { MouseButton, type MouseData } from "./MouseController";
+export { BoxCollider } from "./colliders/BoxCollider";
+export { LineCollider } from "./colliders/LineCollider";
+export { mosueInsidePath } from "./colliders/mosueInsidePath";
+export { mouseInsideBox } from "./colliders/mouseInsideBox";
+export { mouseIsInsideCircle } from "./colliders/mouseIsInsideCircle";

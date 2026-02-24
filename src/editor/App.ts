@@ -1,8 +1,8 @@
 import { Engine, Entity, Vector2D } from "../core";
 import { AndNode } from "../Entities/gates/AndNode";
-import { NotNode } from "../Entities/gates/NotNOde";
+import { NotNode } from "../Entities/gates/NotNode";
 import { OrNode } from "../Entities/gates/OrNode";
-import { Button } from "../Entities/inputs_outputs/Button";
+import { ButtonNode } from "../Entities/inputs_outputs/ButtonNode";
 import { NodeEntity } from "../Entities/NodeEntity";
 import type { Wire } from "../Entities/Wire";
 import { ContextMenu } from "./ContextMenu";
@@ -54,18 +54,20 @@ export class App extends Engine {
     const c = new AndNode();
     const d = new NotNode();
     const e = new OrNode();
-    const f = new Button();
+    const f = new ButtonNode();
 
     a.pos.add(new Vector2D(300, 50));
     b.pos.add(new Vector2D(300, -150));
     c.pos.add(new Vector2D(0, -200));
     d.pos.add(new Vector2D(0, 150));
+    f.pos.add(new Vector2D(400, 400));
 
     this.root.addChild(a);
     this.root.addChild(b);
     this.root.addChild(c);
     this.root.addChild(d);
     this.root.addChild(e);
+    this.root.addChild(f);
   }
 
   protected onInitEntity(e: Entity): void {

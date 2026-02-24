@@ -35,6 +35,17 @@ export class SelectionTool implements Tool {
   activeWires = new Map<string, Wire>();
   wireSelectionOnly = false;
 
+  reset(): void {
+    this.active = false;
+    this.out.length = 0;
+    this.draggingSelection = false;
+    this.isWire = false;
+    this.selectedNodes.length = 0;
+    this.selectedWires.length = 0;
+    this.wireSelectionOnly = false;
+    this.activeWires.clear();
+  }
+
   init(): void {
     this.display = AppEvents.get("display")!;
     this.grid = AppEvents.get("grid")!;

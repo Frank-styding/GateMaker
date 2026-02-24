@@ -1,4 +1,6 @@
 import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
+import { HitFlags, type HitTestResult } from "../core/Entity";
+import { AppEvents } from "../editor/Events";
 import { GridManager } from "../editor/GridManager";
 import type { Wire } from "./Wire";
 
@@ -74,6 +76,7 @@ export class NodeEntity extends Entity {
 
   public delete() {
     this.getConnectedWires().forEach((wire) => wire.delete());
+    AppEvents.get("grid")?.unregisterEntity(this);
     this.parent?.deleteChild(this);
   }
 
@@ -269,6 +272,8 @@ export class NodeEntity extends Entity {
     return wires;
   }
 
+  protected drawControls(ctx: CanvasRenderingContext2D) {}
+
   protected render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
@@ -279,6 +284,7 @@ export class NodeEntity extends Entity {
       this.width,
       this.height,
     );
+    this.drawControls(ctx);
     ctx.restore();
   }
 }

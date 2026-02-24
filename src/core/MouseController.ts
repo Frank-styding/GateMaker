@@ -10,7 +10,6 @@ export type MouseData = {
 };
 
 export enum MouseEventType {
-  CLICK,
   DOWN,
   MOVE,
   UP,
@@ -39,7 +38,8 @@ export class MouseController {
   private isDragging = false;
   private lastMouse: { x: number; y: number } | null = null;
   private dragStart: { x: number; y: number } | null = null;
-
+  //private mouseDown: boolean = false;
+  private buttons = 0;
   constructor(private element: HTMLElement) {
     this.initEvents();
   }
@@ -53,27 +53,17 @@ export class MouseController {
     };
   }
   private initEvents() {
-    // CLICK
-    this.element.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const pos = this.getPos(e);
-      this.emit(MouseEventType.CLICK, { ...pos, button: 0 });
-    });
-
-    let down = false;
-
     // DOWN
     this.element.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       e.stopPropagation();
       const pos = this.getPos(e);
 
-      if (!down) {
+      if ((this.buttons & e.buttons) === 0) {
         this.emit(MouseEventType.DOWN_ONCE, { ...pos, button: e.buttons });
-        down = true;
       }
 
+      this.buttons = e.buttons;
       this.isDragging = true;
       this.lastMouse = pos;
       this.dragStart = pos;
@@ -88,11 +78,11 @@ export class MouseController {
       e.stopPropagation();
       const pos = this.getPos(e);
 
-      if (down) {
+      if (this.buttons !== 0 && e.buttons === 0) {
         this.emit(MouseEventType.UP_ONCE, { ...pos, button: e.buttons });
-        down = false;
       }
 
+      this.buttons = e.buttons;
       this.isDragging = false;
       this.lastMouse = null;
       this.dragStart = null;
@@ -149,6 +139,11 @@ export class MouseController {
     this.element.addEventListener("selectstart", (e) => {
       e.preventDefault();
       e.stopPropagation();
+    });
+
+    this.element.addEventListener("pointercancel", () => {
+      this.buttons = 0;
+      this.isDragging = false;
     });
   }
 

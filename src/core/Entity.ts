@@ -1,7 +1,20 @@
 import { AABB } from "./AABB";
-import { type Collider } from "./Collider";
+import { type Collider } from "./colliders/Collider";
 import { uuid } from "./utils";
 import { Vector2D } from "./Vector";
+
+export enum HitFlags {
+  DRAG = 1 << 0,
+  CLICK = 1 << 1,
+  WHEEL = 1 << 2,
+  KEYBOARD = 1 << 3,
+  UP = 1 << 4,
+}
+
+export interface HitTestResult {
+  entity: Entity;
+  areaFlags: HitFlags;
+}
 
 export class Entity {
   readonly id: string;
@@ -46,6 +59,10 @@ export class Entity {
     this.onMouseClick(pos);
   }
 
+  public _mouseWheel(pos: Vector2D): void {
+    this.onMouseWheel(pos);
+  }
+
   public addChild(entity: Entity): this {
     entity.parent = this;
     this.children.push(entity);
@@ -59,6 +76,14 @@ export class Entity {
     return this;
   }
 
+  public hitTest(pos: Vector2D): HitTestResult | null {
+    if (this.collider?.mouseIsInside(pos)) {
+      return { areaFlags: HitFlags.DRAG, entity: this };
+    }
+
+    return null;
+  }
+  protected onMouseWheel(pos: Vector2D) {}
   protected onMouseDown(pos: Vector2D) {}
   protected onMouseUp(pos: Vector2D) {}
   protected onMouseClick(pos: Vector2D) {}
@@ -127,7 +152,7 @@ export class Entity {
   static collect(
     root: Entity,
     out: Entity[],
-    func?: (item: Entity) => boolean
+    func?: (item: Entity) => boolean,
   ) {
     const stack: Entity[] = [...root.getChildren()];
 
@@ -172,7 +197,7 @@ export class Entity {
     return new AABB(
       width,
       height,
-      new Vector2D(minX + width / 2, minY + height / 2)
+      new Vector2D(minX + width / 2, minY + height / 2),
     );
   }
 
