@@ -2,7 +2,6 @@ import {
   type Vector2D,
   type HitTestResult,
   HitFlags,
-  mouseInsideBox,
   mouseIsInsideCircle,
   AssetsManager,
 } from "../../core";
@@ -78,11 +77,11 @@ export class ButtonNode extends NodeEntity {
     return result;
   }
 
-  protected onMouseClick(pos: Vector2D): void {
+  protected onMouseClick(): void {
     this.state = true;
   }
 
-  protected onMouseUp(pos: Vector2D): void {
+  protected onMouseUp(): void {
     this.state = false;
   }
 }

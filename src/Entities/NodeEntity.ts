@@ -1,5 +1,4 @@
 import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
-import { HitFlags, type HitTestResult } from "../core/Entity";
 import { AppEvents } from "../editor/Events";
 import { GridManager } from "../editor/GridManager";
 import type { Wire } from "./Wire";
@@ -272,7 +271,7 @@ export class NodeEntity extends Entity {
     return wires;
   }
 
-  protected drawControls(ctx: CanvasRenderingContext2D) {}
+  protected drawControls(_: CanvasRenderingContext2D) {}
 
   protected render(ctx: CanvasRenderingContext2D): void {
     ctx.save();

@@ -155,7 +155,7 @@ export class SelectionTool implements Tool {
   }
 
   // ---------------- UP ----------------
-  onUp(e: MouseData): void {
+  onUp(): void {
     if (this.draggingSelection) {
       // Snap nodes
       for (const node of this.selectedNodes) {
