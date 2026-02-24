@@ -22,7 +22,6 @@ export class ContextMenuTool implements Tool {
     }
 
     if (wires.length > 0 || nodes.length > 0) {
-      options.push({ name: "Copy", id: "copy" });
       options.push({ name: "Delete", id: "delete", color: "red" });
     }
     return options;
@@ -37,7 +36,7 @@ export class ContextMenuTool implements Tool {
     const selection = this.tools.tools.get("selection") as SelectionTool;
     const options = this.getOptions(
       selection.selectedWires,
-      selection.selectedNodes
+      selection.selectedNodes,
     );
     if (options.length == 0) {
       AppEvents.emit("closeContextMenu");

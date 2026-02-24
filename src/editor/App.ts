@@ -1,7 +1,8 @@
 import { Engine, Entity, Vector2D } from "../core";
-import { AndEntity } from "../Entities/gates/AndEntity";
-import { NotEntity } from "../Entities/gates/NotEntity";
-import { OrEntity } from "../Entities/gates/OrEntity";
+import { AndNode } from "../Entities/gates/AndNode";
+import { NotNode } from "../Entities/gates/NotNOde";
+import { OrNode } from "../Entities/gates/OrNode";
+import { Button } from "../Entities/inputs_outputs/Button";
 import { NodeEntity } from "../Entities/NodeEntity";
 import type { Wire } from "../Entities/Wire";
 import { ContextMenu } from "./ContextMenu";
@@ -48,11 +49,12 @@ export class App extends Engine {
   }
 
   private initComponents() {
-    const a = new AndEntity();
-    const b = new AndEntity();
-    const c = new AndEntity();
-    const d = new NotEntity();
-    const e = new OrEntity();
+    const a = new AndNode();
+    const b = new AndNode();
+    const c = new AndNode();
+    const d = new NotNode();
+    const e = new OrNode();
+    const f = new Button();
 
     a.pos.add(new Vector2D(300, 50));
     b.pos.add(new Vector2D(300, -150));

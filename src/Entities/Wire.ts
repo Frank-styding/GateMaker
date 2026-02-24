@@ -4,10 +4,6 @@ import { GridManager } from "../editor/GridManager";
 import { WireRouter } from "../editor/WireRouter";
 import type { NodeEntity } from "./NodeEntity";
 
-function makeStub(pos: Vector2D, dir: Vector2D, distance: number) {
-  return new Vector2D(pos.x + dir.x * distance, pos.y + dir.y * distance);
-}
-
 export class Wire extends Entity {
   static LINE_HEIGHT: number = 12;
 
@@ -75,6 +71,7 @@ export class Wire extends Entity {
     this.points.push(this.endPos);
     this.path.push(this.endPos);
     this.completed = true;
+    this.recalc();
   }
 
   public addPoint(pos: Vector2D) {

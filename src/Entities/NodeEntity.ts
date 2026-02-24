@@ -35,7 +35,8 @@ export class NodeEntity extends Entity {
   public nodeName!: string;
   public connectors: NodeConnector[] = [];
   public layer!: HTMLCanvasElement;
-  public showLabel: boolean = false;
+  public showLabel: boolean = true;
+  public showConnectorLabel: boolean = true;
   //grid properties
   public _cells: number[] = [];
 
@@ -122,27 +123,39 @@ export class NodeEntity extends Entity {
           const pinPos = cH * 2 + connection.idx * cellSize;
           if (connection.direction == "left") {
             ctx.fillRect(0, pinPos, cH, cW);
-            ctx.textAlign = "left";
-            ctx.fillText(connection.name, offset + 4, pinPos + cW / 2 + 2);
+            if (this.showConnectorLabel) {
+              ctx.textAlign = "left";
+              ctx.fillText(connection.name, offset + 4, pinPos + cW / 2 + 2);
+            }
           }
           if (connection.direction == "right") {
             ctx.fillRect(width - cH, pinPos, cH, cW);
-            ctx.textAlign = "right";
-            ctx.fillText(
-              connection.name,
-              width - offset - 4,
-              pinPos + cW / 2 + 2
-            );
+            if (this.showConnectorLabel) {
+              ctx.textAlign = "right";
+              ctx.fillText(
+                connection.name,
+                width - offset - 4,
+                pinPos + cW / 2 + 2,
+              );
+            }
           }
           if (connection.direction == "top") {
             ctx.fillRect(pinPos, 0, cW, cH);
-            ctx.textAlign = "center";
-            ctx.fillText(connection.name, pinPos + cW / 2, offset + 10);
+            if (this.showConnectorLabel) {
+              ctx.textAlign = "center";
+              ctx.fillText(connection.name, pinPos + cW / 2, offset + 10);
+            }
           }
           if (connection.direction == "bottom") {
             ctx.fillRect(pinPos, height - cH - 1, cW, cH);
-            ctx.textAlign = "center";
-            ctx.fillText(connection.name, pinPos + cW / 2, height - offset - 8);
+            if (this.showConnectorLabel) {
+              ctx.textAlign = "center";
+              ctx.fillText(
+                connection.name,
+                pinPos + cW / 2,
+                height - offset - 8,
+              );
+            }
           }
         }
       },
@@ -188,7 +201,7 @@ export class NodeEntity extends Entity {
     }
 
     const item = this.connectors.filter(
-      (item) => item.idx == idx && item.direction == direction
+      (item) => item.idx == idx && item.direction == direction,
     )[0];
     if (!item) return undefined;
 
@@ -196,15 +209,15 @@ export class NodeEntity extends Entity {
       direction == "top" || direction == "bottom"
         ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "left"
-        ? this.pos.x - this.width / 2 + cH / 2
-        : this.pos.x + this.width / 2 - cH / 2;
+          ? this.pos.x - this.width / 2 + cH / 2
+          : this.pos.x + this.width / 2 - cH / 2;
 
     const y =
       direction == "left" || direction == "right"
         ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "top"
-        ? this.pos.y + this.height / 2 - cH / 2
-        : this.pos.y - this.height / 2 + cH / 2;
+          ? this.pos.y + this.height / 2 - cH / 2
+          : this.pos.y - this.height / 2 + cH / 2;
 
     return { type: "connector", x, y, name: item.name };
   }
@@ -220,15 +233,15 @@ export class NodeEntity extends Entity {
       direction == "top" || direction == "bottom"
         ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "left"
-        ? this.pos.x - this.width / 2 + cH / 2
-        : this.pos.x + this.width / 2 - cH / 2;
+          ? this.pos.x - this.width / 2 + cH / 2
+          : this.pos.x + this.width / 2 - cH / 2;
 
     const y =
       direction == "left" || direction == "right"
         ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "top"
-        ? this.pos.y + this.height / 2 - cH / 2
-        : this.pos.y - this.height / 2 + cH / 2;
+          ? this.pos.y + this.height / 2 - cH / 2
+          : this.pos.y - this.height / 2 + cH / 2;
 
     return { x, y };
   }
@@ -264,7 +277,7 @@ export class NodeEntity extends Entity {
       -this.width / 2,
       -this.height / 2,
       this.width,
-      this.height
+      this.height,
     );
     ctx.restore();
   }

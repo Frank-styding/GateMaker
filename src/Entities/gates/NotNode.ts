@@ -1,6 +1,6 @@
 import { NodeEntity } from "../NodeEntity";
 
-export class NotEntity extends NodeEntity {
+export class NotNode extends NodeEntity {
   constructor() {
     super();
     this.showLabel = true;
