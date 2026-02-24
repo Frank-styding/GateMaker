@@ -92,6 +92,7 @@ export class Wire extends Entity {
     ctx.beginPath();
     ctx.lineWidth = Wire.LINE_HEIGHT;
     ctx.lineJoin = "round";
+    ctx.strokeStyle = "blue";
 
     for (let i = 0; i < this.path.length; i++) {
       const p = this.path[i];
@@ -99,6 +100,18 @@ export class Wire extends Entity {
       else ctx.lineTo(p.x, p.y);
     }
     if (!this.completed) ctx.lineTo(this.endPos.x, this.endPos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.lineWidth = Wire.LINE_HEIGHT - 3;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#FFFFFF";
+    for (let i = 0; i < this.path.length; i++) {
+      const p = this.path[i];
+      if (i == 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    if (!this.completed) ctx.lineTo(this.endPos.x, this.endPos.y);
+
     ctx.stroke();
     ctx.restore();
   }

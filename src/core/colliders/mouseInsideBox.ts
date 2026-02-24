@@ -1,4 +1,4 @@
-import type { Vector2D } from "./Vector";
+import type { Vector2D } from "../Vector";
 
 export function mouseInsideBox(
   center: Vector2D,

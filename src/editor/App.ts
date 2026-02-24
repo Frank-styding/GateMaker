@@ -3,6 +3,7 @@ import { AndNode } from "../Entities/gates/AndNode";
 import { NotNode } from "../Entities/gates/NotNode";
 import { OrNode } from "../Entities/gates/OrNode";
 import { ButtonNode } from "../Entities/inputs_outputs/ButtonNode";
+import { SwitchNode } from "../Entities/inputs_outputs/SwitchNode";
 import { NodeEntity } from "../Entities/NodeEntity";
 import type { Wire } from "../Entities/Wire";
 import { ContextMenu } from "./ContextMenu";
@@ -22,7 +23,7 @@ export class App extends Engine {
     AppEvents.send("display", () => this.display);
     AppEvents.send("grid", () => this.grid);
     AppEvents.send("root", () => this.root);
-    AppEvents.on("on_context_edit_wire", ({ wires }) => {
+    AppEvents.on("on_context_calc_wire", ({ wires }) => {
       wires.forEach((wire) => {
         wire.recalc();
         wire.forceLayoutUpdate();
@@ -55,12 +56,14 @@ export class App extends Engine {
     const d = new NotNode();
     const e = new OrNode();
     const f = new ButtonNode();
+    const g = new SwitchNode();
 
     a.pos.add(new Vector2D(300, 50));
     b.pos.add(new Vector2D(300, -150));
     c.pos.add(new Vector2D(0, -200));
     d.pos.add(new Vector2D(0, 150));
     f.pos.add(new Vector2D(400, 400));
+    g.pos.add(new Vector2D(450, 0));
 
     this.root.addChild(a);
     this.root.addChild(b);
@@ -68,6 +71,7 @@ export class App extends Engine {
     this.root.addChild(d);
     this.root.addChild(e);
     this.root.addChild(f);
+    this.root.addChild(g);
   }
 
   protected onInitEntity(e: Entity): void {

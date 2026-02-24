@@ -8,8 +8,8 @@ import {
 
 import { NodeEntity } from "../NodeEntity";
 
-export class ButtonNode extends NodeEntity {
-  static SIZE: number = 26;
+export class SwitchNode extends NodeEntity {
+  static SiZE: number = 26;
 
   activeStateLayer!: HTMLCanvasElement;
   disableStateLayer!: HTMLCanvasElement;
@@ -28,24 +28,28 @@ export class ButtonNode extends NodeEntity {
 
   protected init(): void {
     super.init();
-    const size = ButtonNode.SIZE;
-    this.activeStateLayer = AssetsManager.registerAsset("BUTTON_ACTIVE", {
+    const size = SwitchNode.SiZE;
+    this.activeStateLayer = AssetsManager.registerAsset("SWITCH_ACTIVE", {
       width: size,
       height: size,
       builder: (ctx) => {
         ctx.fillStyle = "#F53C23";
         ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = "#303030";
+        ctx.fillRect(size - 10, 0, 10, size);
         ctx.strokeStyle = "black";
         ctx.lineWidth = 2;
         ctx.strokeRect(0, 0, size, size);
       },
     }) as HTMLCanvasElement;
-    this.disableStateLayer = AssetsManager.registerAsset("BUTTON_DISABLE", {
+    this.disableStateLayer = AssetsManager.registerAsset("SWITCH_DISABLE", {
       width: size,
       height: size,
       builder: (ctx) => {
         ctx.fillStyle = "#F0EFEF";
         ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = "#303030";
+        ctx.fillRect(0, 0, 10, size);
         ctx.strokeStyle = "black";
         ctx.lineWidth = 3;
         ctx.strokeRect(0, 0, size, size);
@@ -55,12 +59,12 @@ export class ButtonNode extends NodeEntity {
 
   protected drawControls(ctx: CanvasRenderingContext2D): void {
     const layer = this.state ? this.activeStateLayer : this.disableStateLayer;
-    const size = ButtonNode.SIZE;
+    const size = SwitchNode.SiZE;
     ctx.drawImage(layer, -size / 2, -size / 2, size, size);
   }
 
   public hitTest(pos: Vector2D): HitTestResult | null {
-    const size = ButtonNode.SIZE;
+    const size = SwitchNode.SiZE;
 
     const result = super.hitTest(pos);
     if (mouseInsideBox(this.pos, pos, size / 2, size / 2)) {
@@ -70,10 +74,8 @@ export class ButtonNode extends NodeEntity {
   }
 
   protected onMouseClick(): void {
-    this.state = true;
+    this.state = !this.state;
   }
 
-  protected onMouseUp(): void {
-    this.state = false;
-  }
+  protected onMouseUp(): void {}
 }
