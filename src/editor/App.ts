@@ -23,7 +23,7 @@ export class App extends Engine {
     AppEvents.send("root", () => this.root);
     AppEvents.on("on_context_edit_wire", ({ wires }) => {
       wires.forEach((wire) => {
-        wire.recalc(this.grid);
+        wire.recalc();
         wire.forceLayoutUpdate();
       });
     });

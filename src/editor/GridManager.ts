@@ -258,7 +258,7 @@ export class GridManager {
     });
 
     for (const wire of wires) {
-      wire.recalc(grid);
+      wire.recalc();
       wire.forceLayoutUpdate();
     }
   }
