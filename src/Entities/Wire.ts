@@ -118,6 +118,8 @@ export class Wire extends Entity {
     this.startNode.deleteWire(this.startPin);
     this.endNode.deleteWire(this.endPin);
     this.parent?.deleteChild(this);
+    const grid = AppEvents.get("grid")!;
+    grid.unregisterWire(this);
   }
 
   public getNodes() {
