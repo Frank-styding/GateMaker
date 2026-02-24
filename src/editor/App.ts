@@ -3,6 +3,7 @@ import { AndEntity } from "../Entities/gates/AndEntity";
 import { NotEntity } from "../Entities/gates/NotEntity";
 import { OrEntity } from "../Entities/gates/OrEntity";
 import { NodeEntity } from "../Entities/NodeEntity";
+import type { Wire } from "../Entities/Wire";
 import { ContextMenu } from "./ContextMenu";
 import { AppEvents } from "./Events";
 import { GridManager } from "./GridManager";
@@ -20,6 +21,17 @@ export class App extends Engine {
     AppEvents.send("display", () => this.display);
     AppEvents.send("grid", () => this.grid);
     AppEvents.send("root", () => this.root);
+    AppEvents.on("on_context_edit_wire", ({ wires }) => {
+      wires.forEach((wire) => {
+        wire.recalc(this.grid);
+        wire.forceLayoutUpdate();
+      });
+    });
+    AppEvents.on("on_context_delete", ({ wires, nodes }) => {
+      nodes.forEach((node) => node.delete());
+      wires.forEach((wire) => wire.delete());
+      AppEvents.emit("unLockTool");
+    });
   }
 
   public init(): void {

@@ -8,8 +8,8 @@ export class Entity {
   protected children: Entity[];
   protected collider?: Collider;
   protected bounding: AABB;
-  private dirtyLayout;
-  private parent?: Entity;
+  protected dirtyLayout;
+  protected parent?: Entity;
   public isStarted = false;
 
   public layerIdx: number = 0;
@@ -127,7 +127,7 @@ export class Entity {
   static collect(
     root: Entity,
     out: Entity[],
-    func?: (item: Entity) => boolean,
+    func?: (item: Entity) => boolean
   ) {
     const stack: Entity[] = [...root.getChildren()];
 
@@ -172,7 +172,11 @@ export class Entity {
     return new AABB(
       width,
       height,
-      new Vector2D(minX + width / 2, minY + height / 2),
+      new Vector2D(minX + width / 2, minY + height / 2)
     );
+  }
+
+  public deleteChild(entity: Entity): void {
+    this.children = this.children.filter((child) => child.id !== entity.id);
   }
 }

@@ -67,6 +67,15 @@ export class NodeEntity extends Entity {
     grid.registerEntity(this);
   }
 
+  public deleteWire(startPin: string) {
+    delete this.wiresPos[startPin];
+  }
+
+  public delete() {
+    this.getConnectedWires().forEach((wire) => wire.delete());
+    this.parent?.deleteChild(this);
+  }
+
   protected init(): void {
     const cW = NodeEntity.CONNECTION_WIDTH;
     const cH = NodeEntity.CONNECTION_HEIGHT;
@@ -122,7 +131,7 @@ export class NodeEntity extends Entity {
             ctx.fillText(
               connection.name,
               width - offset - 4,
-              pinPos + cW / 2 + 2,
+              pinPos + cW / 2 + 2
             );
           }
           if (connection.direction == "top") {
@@ -179,7 +188,7 @@ export class NodeEntity extends Entity {
     }
 
     const item = this.connectors.filter(
-      (item) => item.idx == idx && item.direction == direction,
+      (item) => item.idx == idx && item.direction == direction
     )[0];
     if (!item) return undefined;
 
@@ -187,15 +196,15 @@ export class NodeEntity extends Entity {
       direction == "top" || direction == "bottom"
         ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "left"
-          ? this.pos.x - this.width / 2 + cH / 2
-          : this.pos.x + this.width / 2 - cH / 2;
+        ? this.pos.x - this.width / 2 + cH / 2
+        : this.pos.x + this.width / 2 - cH / 2;
 
     const y =
       direction == "left" || direction == "right"
         ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "top"
-          ? this.pos.y + this.height / 2 - cH / 2
-          : this.pos.y - this.height / 2 + cH / 2;
+        ? this.pos.y + this.height / 2 - cH / 2
+        : this.pos.y - this.height / 2 + cH / 2;
 
     return { type: "connector", x, y, name: item.name };
   }
@@ -211,15 +220,15 @@ export class NodeEntity extends Entity {
       direction == "top" || direction == "bottom"
         ? this.pos.x - this.width / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "left"
-          ? this.pos.x - this.width / 2 + cH / 2
-          : this.pos.x + this.width / 2 - cH / 2;
+        ? this.pos.x - this.width / 2 + cH / 2
+        : this.pos.x + this.width / 2 - cH / 2;
 
     const y =
       direction == "left" || direction == "right"
         ? this.pos.y - this.height / 2 + (idx * 2 + 1) * cW + cW / 2
         : direction == "top"
-          ? this.pos.y + this.height / 2 - cH / 2
-          : this.pos.y - this.height / 2 + cH / 2;
+        ? this.pos.y + this.height / 2 - cH / 2
+        : this.pos.y - this.height / 2 + cH / 2;
 
     return { x, y };
   }
@@ -255,7 +264,7 @@ export class NodeEntity extends Entity {
       -this.width / 2,
       -this.height / 2,
       this.width,
-      this.height,
+      this.height
     );
     ctx.restore();
   }

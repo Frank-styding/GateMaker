@@ -59,6 +59,7 @@ export class ContextMenu {
         wires: this.wires,
         nodes: this.nodes,
       });
+      AppEvents.emit("closeContextMenu");
     });
     return option;
   }

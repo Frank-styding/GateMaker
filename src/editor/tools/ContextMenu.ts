@@ -18,7 +18,7 @@ export class ContextMenuTool implements Tool {
   getOptions(wires: Wire[], nodes: NodeEntity[]) {
     const options: ContextMenuOption[] = [];
     if (wires.length > 0 && nodes.length == 0) {
-      options.push({ name: "Edit", id: "edit_wire" });
+      options.push({ name: "Calc Path", id: "edit_wire" });
     }
 
     if (wires.length > 0 || nodes.length > 0) {
@@ -37,7 +37,7 @@ export class ContextMenuTool implements Tool {
     const selection = this.tools.tools.get("selection") as SelectionTool;
     const options = this.getOptions(
       selection.selectedWires,
-      selection.selectedNodes,
+      selection.selectedNodes
     );
     if (options.length == 0) {
       AppEvents.emit("closeContextMenu");

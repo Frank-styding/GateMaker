@@ -4,7 +4,7 @@ import { WireRouter } from "../editor/WireRouter";
 import type { NodeEntity } from "./NodeEntity";
 
 export class Wire extends Entity {
-  static LINE_HEIGHT: number = 10;
+  static LINE_HEIGHT: number = 12;
 
   public startNode!: NodeEntity;
   public endNode!: NodeEntity;
@@ -99,12 +99,22 @@ export class Wire extends Entity {
     p.y += cellSize / 2;
   }
 
-  recalc(grid: GridManager) {
+  public delete() {
+    this.startNode.deleteWire(this.startPin);
+    this.endNode.deleteWire(this.endPin);
+    this.parent?.deleteChild(this);
+  }
+
+  public getNodes() {
+    return [this.startNode, this.endNode];
+  }
+
+  public recalc(grid: GridManager) {
     // 1. Borrar el rastro actual de este cable antes de recalcular
     grid.unregisterWire(this);
 
-    const a = this.startNode.getConnectorPos(this.startPin)!;
-    const b = this.endNode.getConnectorPos(this.endPin)!;
+    const a = this.startPos;
+    const b = this.endPos;
 
     const startDir = new Vector2D(a.x > this.startNode.pos.x ? 1 : -1, 0);
     const endDir = new Vector2D(b.x < this.endNode.pos.x ? -1 : 1, 0);
@@ -116,7 +126,7 @@ export class Wire extends Entity {
       b as Vector2D,
       startDir,
       endDir,
-      this,
+      this
     );
 
     path = [a as Vector2D, ...path, b as Vector2D];
