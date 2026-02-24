@@ -15,12 +15,15 @@ export class Wire extends Entity {
   public endPos: Vector2D;
   public path: Vector2D[];
   _cells: number[] = [];
+
+  completed: boolean;
   constructor() {
     super();
     this.path = [];
     this.layerIdx = 0;
     this.startPos = new Vector2D();
     this.endPos = new Vector2D();
+    this.completed = false;
   }
 
   protected init(): void {
@@ -52,6 +55,7 @@ export class Wire extends Entity {
     this.startPin = name;
     this.startPos.set(pos);
     this.endPos.set(pos);
+    this.path.push(this.startPos);
   }
 
   public endWire(node: NodeEntity, name: string, pos: Vector2D) {
@@ -61,9 +65,17 @@ export class Wire extends Entity {
 
     this.endNode.setWirePos(this.endPin, this, this.endPos);
     this.startNode.setWirePos(this.startPin, this, this.startPos);
-    this.path.length = 0;
-    this.path.push(this.startPos);
+    //this.path.length = 0;
+    // this.path.push(this.startPos);
     this.path.push(this.endPos);
+    this.completed = true;
+  }
+
+  public addPoint(pos: Vector2D) {
+    GridManager.snap(pos);
+    pos.x += GridManager.CELL_SIZE / 2;
+    pos.y += GridManager.CELL_SIZE / 2;
+    this.path.push(pos);
   }
 
   public moveLastPoint(pos: Vector2D) {
@@ -77,16 +89,12 @@ export class Wire extends Entity {
     ctx.lineWidth = Wire.LINE_HEIGHT;
     ctx.lineJoin = "round";
 
-    if (this.path.length > 0) {
-      for (let i = 0; i < this.path.length; i++) {
-        const p = this.path[i];
-        if (i == 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      }
-    } else {
-      ctx.moveTo(this.startPos.x, this.startPos.y);
-      ctx.lineTo(this.endPos.x, this.endPos.y);
+    for (let i = 0; i < this.path.length; i++) {
+      const p = this.path[i];
+      if (i == 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
     }
+    if (!this.completed) ctx.lineTo(this.endPos.x, this.endPos.y);
     ctx.stroke();
     ctx.restore();
   }

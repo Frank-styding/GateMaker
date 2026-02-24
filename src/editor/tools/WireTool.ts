@@ -45,6 +45,8 @@ export class WireTool implements Tool {
             //this.unLock();
           }
         }
+      } else {
+        this.current?.addPoint(v);
       }
     } else {
       this.current = null;
