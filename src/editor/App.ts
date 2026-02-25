@@ -5,21 +5,24 @@ import { OrNode } from "../Entities/gates/OrNode";
 import { ButtonNode } from "../Entities/inputs_outputs/ButtonNode";
 import { SwitchNode } from "../Entities/inputs_outputs/SwitchNode";
 import { NodeEntity } from "../Entities/NodeEntity";
-import type { Wire } from "../Entities/Wire";
 import { ContextMenu } from "./ContextMenu";
 import { AppEvents } from "./Events";
 import { GridManager } from "./GridManager";
 import { initGridPattern } from "./GridPattern";
+import { NodeCatalog } from "./NodeCatalog";
 import { ToolManager } from "./tools/ToolManager";
 
 export class App extends Engine {
   public tools!: ToolManager;
   public grid!: GridManager;
   public contextMenu!: ContextMenu;
+  public nodeCatalog!: NodeCatalog;
 
   constructor() {
     super();
     this.contextMenu = new ContextMenu();
+    this.nodeCatalog = new NodeCatalog();
+
     AppEvents.send("display", () => this.display);
     AppEvents.send("grid", () => this.grid);
     AppEvents.send("root", () => this.root);
@@ -29,10 +32,18 @@ export class App extends Engine {
         wire.forceLayoutUpdate();
       });
     });
+
     AppEvents.on("on_context_delete", ({ wires, nodes }) => {
       nodes.forEach((node) => node.delete());
       wires.forEach((wire) => wire.delete());
       AppEvents.emit("unLockTool");
+    });
+
+    AppEvents.on("on_context_add_node", ({ x, y }) => {
+      AppEvents.emit("openNodeCatalog", { x, y });
+    });
+    AppEvents.on("addEntity", ({ node }) => {
+      this.root.addChild(node);
     });
   }
 
@@ -47,6 +58,7 @@ export class App extends Engine {
     this.display.panY = this.display.height / 2;
     this.display.zoom = 1;
     this.initComponents();
+    AppEvents.emit("loadNodes");
   }
 
   private initComponents() {
@@ -79,8 +91,13 @@ export class App extends Engine {
       e.initGrid(this.grid);
     }
   }
+
   public getContextMenu() {
     return this.contextMenu.getElement();
+  }
+
+  public getNodeCalalog() {
+    return this.nodeCatalog.getElement();
   }
 
   protected render(ctx: CanvasRenderingContext2D): void {

@@ -4,9 +4,39 @@ import {
   HitFlags,
   AssetsManager,
   mouseInsideBox,
+  createImageFromCanvas,
 } from "../../core";
+import { NodeRecord } from "../../editor/NodeRecord";
 
-import { NodeEntity } from "../NodeEntity";
+import { NodeEntity, type NodeConfig } from "../NodeEntity";
+
+function createActiveButtonLayer(size: number) {
+  return AssetsManager.registerAsset("BUTTON_ACTIVE", {
+    width: size,
+    height: size,
+    builder: (ctx) => {
+      ctx.fillStyle = "#F53C23";
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, size, size);
+    },
+  }) as HTMLCanvasElement;
+}
+
+function createDisableButtonLayer(size: number) {
+  return AssetsManager.registerAsset("BUTTON_DISABLE", {
+    width: size,
+    height: size,
+    builder: (ctx) => {
+      ctx.fillStyle = "#F0EFEF";
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, size, size);
+    },
+  }) as HTMLCanvasElement;
+}
 
 export class ButtonNode extends NodeEntity {
   static SIZE: number = 26;
@@ -16,41 +46,46 @@ export class ButtonNode extends NodeEntity {
 
   state: boolean = false;
 
+  protected static LAYERS: HTMLCanvasElement[] = [];
+
+  static CONFIG?: NodeConfig = {
+    showLabel: false,
+    showConnectorLabel: false,
+    colSpan: 1,
+    rowSpan: 1,
+    connectors: [{ name: "A", direction: "right", idx: 0 }],
+    nodeName: "BUTTON",
+  };
+
+  static initLayers(): void {
+    super.initLayers();
+    this.LAYERS.push(createActiveButtonLayer(ButtonNode.SIZE));
+    this.LAYERS.push(createDisableButtonLayer(ButtonNode.SIZE));
+  }
+
+  static getPreview(): HTMLImageElement {
+    const preview = this.LAYERS[0];
+    const control = this.LAYERS[1];
+    return createImageFromCanvas(preview.width, preview.height, (ctx) => {
+      ctx.drawImage(preview, 0, 0);
+      ctx.drawImage(
+        control,
+        preview.width / 2 - control.width / 2,
+        preview.height / 2 - control.height / 2,
+      );
+    });
+  }
+
   constructor() {
     super();
-    this.showLabel = false;
-    this.showConnectorLabel = false;
-    this.colSpan = 1;
-    this.rowSpan = 1;
-    this.connectors = [{ name: "A", direction: "right", idx: 0 }];
-    this.nodeName = "Button";
+    this.config = ButtonNode.CONFIG!;
+    this.layer = ButtonNode.LAYERS[0];
+    this.activeStateLayer = ButtonNode.LAYERS[1];
+    this.disableStateLayer = ButtonNode.LAYERS[2];
   }
 
   protected init(): void {
     super.init();
-    const size = ButtonNode.SIZE;
-    this.activeStateLayer = AssetsManager.registerAsset("BUTTON_ACTIVE", {
-      width: size,
-      height: size,
-      builder: (ctx) => {
-        ctx.fillStyle = "#F53C23";
-        ctx.fillRect(0, 0, size, size);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, size, size);
-      },
-    }) as HTMLCanvasElement;
-    this.disableStateLayer = AssetsManager.registerAsset("BUTTON_DISABLE", {
-      width: size,
-      height: size,
-      builder: (ctx) => {
-        ctx.fillStyle = "#F0EFEF";
-        ctx.fillRect(0, 0, size, size);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(0, 0, size, size);
-      },
-    }) as HTMLCanvasElement;
   }
 
   protected drawControls(ctx: CanvasRenderingContext2D): void {
@@ -77,3 +112,5 @@ export class ButtonNode extends NodeEntity {
     this.state = false;
   }
 }
+ButtonNode.initLayers();
+NodeRecord.registerNode(ButtonNode);

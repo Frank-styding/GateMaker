@@ -169,11 +169,6 @@ export class SelectionTool implements Tool {
         this.grid.registerEntity?.(item);
       });
 
-      // Recalc wires & show again
-      //const wiresArray = Array.from(this.activeWires.values());
-      //this.grid.recalcWiresOptimized(wiresArray, this.grid);
-      //wiresArray.forEach((item) => (item.hide = false));
-
       this.activeWires.clear();
       this.box.set(Entity.calcBounding(this.out));
     }

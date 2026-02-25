@@ -10,7 +10,16 @@ interface EventStruct {
   setContextMenu: ContextMenuOption[];
   openContextMenu: { x: number; y: number; wires: Wire[]; nodes: NodeEntity[] };
   closeContextMenu: any;
-  [key: `on_context_${string}`]: { wires: Wire[]; nodes: NodeEntity[] };
+  openNodeCatalog: { x: number; y: number };
+  closeNodeCatalog: any;
+  loadNodes: any;
+  addEntity: { node: Entity };
+  [key: `on_context_${string}`]: {
+    wires: Wire[];
+    nodes: NodeEntity[];
+    x: number;
+    y: number;
+  };
 }
 
 interface ProviderStruct {

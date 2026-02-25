@@ -19,9 +19,15 @@ export class GridManager {
     const baseRow = fastFloor(e.pos.y * inv);
 
     const startCol =
-      baseCol - (e.colSpan % 2 == 0 ? e.colSpan / 2 : (e.colSpan - 1) / 2);
+      baseCol -
+      (e.config.colSpan % 2 == 0
+        ? e.config.colSpan / 2
+        : (e.config.colSpan - 1) / 2);
     const startRow =
-      baseRow - (e.rowSpan % 2 == 0 ? e.rowSpan / 2 : (e.rowSpan - 1) / 2);
+      baseRow -
+      (e.config.rowSpan % 2 == 0
+        ? e.config.rowSpan / 2
+        : (e.config.rowSpan - 1) / 2);
 
     if (e._lastCol === baseCol && e._lastRow === baseRow) return;
 
@@ -31,8 +37,8 @@ export class GridManager {
     e._lastCol = baseCol;
     e._lastRow = baseRow;
 
-    for (let i = 0; i < e.colSpan; i++) {
-      for (let j = 0; j < e.rowSpan; j++) {
+    for (let i = 0; i < e.config.colSpan; i++) {
+      for (let j = 0; j < e.config.rowSpan; j++) {
         const col = startCol + i;
         const row = startRow + j;
         const key = hashPos(col, row);
@@ -134,8 +140,8 @@ export class GridManager {
     const baseCol = fastFloor(e.pos.x * inv);
     const baseRow = fastFloor(e.pos.y * inv);
 
-    const halfCol = (e.colSpan - 1) >> 1;
-    const halfRow = (e.rowSpan - 1) >> 1;
+    const halfCol = (e.config.colSpan - 1) >> 1;
+    const halfRow = (e.config.rowSpan - 1) >> 1;
 
     for (let i = -halfCol; i <= halfCol; i++) {
       for (let j = -halfRow; j <= halfRow; j++) {

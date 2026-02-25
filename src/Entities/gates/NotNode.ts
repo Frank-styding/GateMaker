@@ -1,15 +1,25 @@
-import { NodeEntity } from "../NodeEntity";
+import { NodeRecord } from "../../editor/NodeRecord";
+import { NodeEntity, type NodeConfig } from "../NodeEntity";
 
 export class NotNode extends NodeEntity {
-  constructor() {
-    super();
-    this.showLabel = true;
-    this.colSpan = 3;
-    this.rowSpan = 1;
-    this.connectors = [
+  protected static LAYERS: HTMLCanvasElement[] = [];
+  static CONFIG?: NodeConfig = {
+    showLabel: true,
+    colSpan: 3,
+    rowSpan: 1,
+    connectors: [
       { name: "A", direction: "left", idx: 0 },
       { name: "B", direction: "right", idx: 0 },
-    ];
-    this.nodeName = "NOT";
+    ],
+    nodeName: "NOT",
+    showConnectorLabel: true,
+  };
+
+  constructor() {
+    super();
+    this.config = NotNode.CONFIG!;
+    this.layer = NotNode.LAYERS[0];
   }
 }
+NotNode.initLayers();
+NodeRecord.registerNode(NotNode);

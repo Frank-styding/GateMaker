@@ -12,4 +12,5 @@ button.addEventListener("click", () => {});
 
 $app!.appendChild(engine.getCanvas());
 $app!.appendChild(engine.getContextMenu());
+$app!.appendChild(engine.getNodeCalalog());
 engine.start();

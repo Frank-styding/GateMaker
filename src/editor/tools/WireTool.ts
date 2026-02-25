@@ -16,7 +16,6 @@ export class WireTool implements Tool {
   current: Wire | null = null;
   display!: RenderLayer;
   root!: Entity;
-  //unLock!: () => void;
 
   init(): void {
     this.root = AppEvents.get("root")!;

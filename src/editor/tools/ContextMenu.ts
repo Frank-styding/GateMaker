@@ -18,11 +18,14 @@ export class ContextMenuTool implements Tool {
   getOptions(wires: Wire[], nodes: NodeEntity[]) {
     const options: ContextMenuOption[] = [];
     if (wires.length > 0) {
-      options.push({ name: "Adjust Path", id: "calc_wire" });
+      options.push({ name: "Adjust Wire", id: "calc_wire" });
     }
 
     if (wires.length > 0 || nodes.length > 0) {
       options.push({ name: "Delete", id: "delete", color: "red" });
+    }
+    if (wires.length == 0 && nodes.length == 0) {
+      options.push({ name: "Add Node", id: "add_node" });
     }
     return options;
   }

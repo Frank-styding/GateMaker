@@ -137,7 +137,9 @@ export class ToolManager {
     this.mouse.on(MouseEventType.DOWN_ONCE, (e) => {
       const we = this.display.screenToWorld(e);
       const { hit, testResult } = this.getHit(new Vector2D(we));
+      AppEvents.emit("closeNodeCatalog");
       if (hit && testResult!.areaFlags & HitFlags.CLICK) {
+        AppEvents.emit("closeContextMenu");
         hit._mouseClick(new Vector2D(we));
         this.activeInteracitveEntity = hit;
         this.restore();

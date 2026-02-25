@@ -31,6 +31,10 @@ export class Entity {
 
   public hide: boolean = false;
 
+  protected static LAYERS: HTMLCanvasElement[] = [];
+
+  protected static initLayers() {}
+
   constructor() {
     this.id = uuid();
     this.children = [];

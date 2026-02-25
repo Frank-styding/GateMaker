@@ -10,3 +10,4 @@ export { LineCollider } from "./colliders/LineCollider";
 export { mosueInsidePath } from "./colliders/mosueInsidePath";
 export { mouseInsideBox } from "./colliders/mouseInsideBox";
 export { mouseIsInsideCircle } from "./colliders/mouseIsInsideCircle";
+export { uuid, createImageFromCanvas } from "./utils";

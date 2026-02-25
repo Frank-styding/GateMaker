@@ -1,4 +1,10 @@
-import { AssetsManager, BoxCollider, Entity, Vector2D } from "../core";
+import {
+  AssetsManager,
+  BoxCollider,
+  createImageFromCanvas,
+  Entity,
+  Vector2D,
+} from "../core";
 import { AppEvents } from "../editor/Events";
 import { GridManager } from "../editor/GridManager";
 import type { Wire } from "./Wire";
@@ -11,33 +17,126 @@ export type NodeConnector = {
   idx: number;
 };
 
-export interface NodeDefinition {
-  name: string;
-  cell_w: number;
-  cell_h: number;
+export interface NodeConfig {
+  nodeName: string;
+  colSpan: number;
+  rowSpan: number;
+  showLabel: boolean;
   connectors: NodeConnector[];
+  showConnectorLabel: boolean;
+}
+
+function createNodeLayer({
+  nodeName,
+  colSpan,
+  rowSpan,
+  showLabel,
+  showConnectorLabel,
+  connectors,
+}: NodeConfig) {
+  const asset = AssetsManager.get(nodeName);
+  if (asset) return asset;
+
+  const cW = NodeEntity.CONNECTION_WIDTH;
+  const cH = NodeEntity.CONNECTION_HEIGHT;
+  const cellSize = GridManager.CELL_SIZE;
+  const width = cellSize * colSpan + cH * 2;
+  const height = cellSize * rowSpan + cH * 2;
+  return AssetsManager.registerAsset(nodeName, {
+    width: width,
+    height: height,
+    builder: (ctx) => {
+      const { width, height } = ctx.canvas;
+      const offset = cH;
+
+      ctx.fillStyle = "#ECECEC";
+      ctx.fillRect(offset, offset, width - offset * 2, height - offset * 2);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(offset, offset, width - offset * 2, height - offset * 2);
+
+      if (showLabel) {
+        ctx.font = "24px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "black";
+        ctx.fillText(nodeName, width / 2, height / 2);
+      }
+
+      ctx.fillStyle = "black";
+      ctx.font = "14px Arial";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i < connectors.length; i++) {
+        const connection = connectors[i];
+        const pinPos = cH * 2 + connection.idx * cellSize;
+        if (connection.direction == "left") {
+          ctx.fillRect(0, pinPos, cH, cW);
+          if (showConnectorLabel) {
+            ctx.textAlign = "left";
+            ctx.fillText(connection.name, offset + 4, pinPos + cW / 2 + 2);
+          }
+        }
+        if (connection.direction == "right") {
+          ctx.fillRect(width - cH, pinPos, cH, cW);
+          if (showConnectorLabel) {
+            ctx.textAlign = "right";
+            ctx.fillText(
+              connection.name,
+              width - offset - 4,
+              pinPos + cW / 2 + 2,
+            );
+          }
+        }
+        if (connection.direction == "top") {
+          ctx.fillRect(pinPos, 0, cW, cH);
+          if (showConnectorLabel) {
+            ctx.textAlign = "center";
+            ctx.fillText(connection.name, pinPos + cW / 2, offset + 10);
+          }
+        }
+        if (connection.direction == "bottom") {
+          ctx.fillRect(pinPos, height - cH - 1, cW, cH);
+          if (showConnectorLabel) {
+            ctx.textAlign = "center";
+            ctx.fillText(connection.name, pinPos + cW / 2, height - offset - 8);
+          }
+        }
+      }
+    },
+  }) as HTMLCanvasElement;
 }
 
 export class NodeEntity extends Entity {
-  // Grid system
-
   // Connector size
   static CONNECTION_WIDTH = GridManager.CELL_SIZE / 2;
   static CONNECTION_HEIGHT = GridManager.CELL_SIZE / 4;
   static PIN_MARGIN = 2;
 
+  protected static LAYERS: HTMLCanvasElement[] = [];
+  static CONFIG?: NodeConfig;
+
+  static initLayers(): void {
+    this.LAYERS.push(createNodeLayer(this.CONFIG!) as HTMLCanvasElement);
+  }
+
+  static getPreview(): HTMLImageElement {
+    const preview = this.LAYERS[0];
+    return createImageFromCanvas(preview.width, preview.height, (ctx) => {
+      ctx.drawImage(preview, 0, 0);
+    });
+  }
+
   // Node data
-  public colSpan!: number;
-  public rowSpan!: number;
   public width!: number;
   public height!: number;
   public nodeWidth!: number;
   public nodeHeight!: number;
-  public nodeName!: string;
-  public connectors: NodeConnector[] = [];
+
   public layer!: HTMLCanvasElement;
-  public showLabel: boolean = true;
-  public showConnectorLabel: boolean = true;
+
+  public config!: NodeConfig;
+
   //grid properties
   public _cells: number[] = [];
 
@@ -61,8 +160,8 @@ export class NodeEntity extends Entity {
 
   static adjustPos(node: NodeEntity) {
     const cellSize = GridManager.CELL_SIZE;
-    node.pos.x += node.colSpan % 2 == 1 ? cellSize / 2 : 0;
-    node.pos.y += node.rowSpan % 2 == 1 ? cellSize / 2 : 0;
+    node.pos.x += node.config.colSpan % 2 == 1 ? cellSize / 2 : 0;
+    node.pos.y += node.config.rowSpan % 2 == 1 ? cellSize / 2 : 0;
   }
 
   public initGrid(grid: GridManager) {
@@ -80,88 +179,15 @@ export class NodeEntity extends Entity {
   }
 
   protected init(): void {
-    const cW = NodeEntity.CONNECTION_WIDTH;
     const cH = NodeEntity.CONNECTION_HEIGHT;
     const cellSize = GridManager.CELL_SIZE;
-
-    this.pos.x += this.colSpan % 2 == 1 ? cellSize / 2 : 0;
-    this.pos.y += this.rowSpan % 2 == 1 ? cellSize / 2 : 0;
-
-    this.nodeHeight = cellSize * this.rowSpan;
-    this.nodeWidth = cellSize * this.colSpan;
-
+    this.pos.x += this.config.colSpan % 2 == 1 ? cellSize / 2 : 0;
+    this.pos.y += this.config.rowSpan % 2 == 1 ? cellSize / 2 : 0;
+    this.nodeHeight = cellSize * this.config.rowSpan;
+    this.nodeWidth = cellSize * this.config.colSpan;
     this.width = this.nodeWidth + cH * 2;
     this.height = this.nodeHeight + cH * 2;
-
     this.collider = new BoxCollider(this.width, this.height, this.pos);
-
-    this.layer = AssetsManager.registerAsset(this.nodeName, {
-      width: this.width,
-      height: this.height,
-      builder: (ctx) => {
-        const { width, height } = ctx.canvas;
-        const offset = cH;
-
-        ctx.fillStyle = "#ECECEC";
-        ctx.fillRect(offset, offset, width - offset * 2, height - offset * 2);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(offset, offset, width - offset * 2, height - offset * 2);
-
-        if (this.showLabel) {
-          ctx.font = "24px Arial";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "black";
-          ctx.fillText(this.nodeName, width / 2, height / 2);
-        }
-
-        ctx.fillStyle = "black";
-        ctx.font = "14px Arial";
-        ctx.textBaseline = "middle";
-
-        for (let i = 0; i < this.connectors.length; i++) {
-          const connection = this.connectors[i];
-          const pinPos = cH * 2 + connection.idx * cellSize;
-          if (connection.direction == "left") {
-            ctx.fillRect(0, pinPos, cH, cW);
-            if (this.showConnectorLabel) {
-              ctx.textAlign = "left";
-              ctx.fillText(connection.name, offset + 4, pinPos + cW / 2 + 2);
-            }
-          }
-          if (connection.direction == "right") {
-            ctx.fillRect(width - cH, pinPos, cH, cW);
-            if (this.showConnectorLabel) {
-              ctx.textAlign = "right";
-              ctx.fillText(
-                connection.name,
-                width - offset - 4,
-                pinPos + cW / 2 + 2,
-              );
-            }
-          }
-          if (connection.direction == "top") {
-            ctx.fillRect(pinPos, 0, cW, cH);
-            if (this.showConnectorLabel) {
-              ctx.textAlign = "center";
-              ctx.fillText(connection.name, pinPos + cW / 2, offset + 10);
-            }
-          }
-          if (connection.direction == "bottom") {
-            ctx.fillRect(pinPos, height - cH - 1, cW, cH);
-            if (this.showConnectorLabel) {
-              ctx.textAlign = "center";
-              ctx.fillText(
-                connection.name,
-                pinPos + cW / 2,
-                height - offset - 8,
-              );
-            }
-          }
-        }
-      },
-    }) as HTMLCanvasElement;
   }
 
   public isInside(p: Vector2D) {
@@ -187,7 +213,7 @@ export class NodeEntity extends Entity {
     if (!horizontal && !vertical) return undefined;
 
     if (vertical) {
-      const a = getIdx(v.x + this.width / 2, this.colSpan);
+      const a = getIdx(v.x + this.width / 2, this.config.colSpan);
       if (a == undefined) return;
       if (v.y < 0) direction = "top";
       else direction = "bottom";
@@ -195,14 +221,14 @@ export class NodeEntity extends Entity {
     }
 
     if (horizontal) {
-      const a = getIdx(v.y + this.height / 2, this.rowSpan);
+      const a = getIdx(v.y + this.height / 2, this.config.rowSpan);
       if (a == undefined) return;
       if (v.x < 0) direction = "left";
       else direction = "right";
       idx = a;
     }
 
-    const item = this.connectors.filter(
+    const item = this.config.connectors.filter(
       (item) => item.idx == idx && item.direction == direction,
     )[0];
     if (!item) return undefined;
@@ -225,7 +251,7 @@ export class NodeEntity extends Entity {
   }
 
   public getConnectorPos(name: string) {
-    const value = this.connectors.find((item) => item.name == name);
+    const value = this.config.connectors.find((item) => item.name == name);
     if (!value) return undefined;
     const { direction, idx } = value;
     const cW = NodeEntity.CONNECTION_WIDTH;
@@ -274,6 +300,7 @@ export class NodeEntity extends Entity {
   protected drawControls(_: CanvasRenderingContext2D) {}
 
   protected render(ctx: CanvasRenderingContext2D): void {
+    if (!this.layer) return;
     ctx.save();
     ctx.translate(this.pos.x, this.pos.y);
     ctx.drawImage(
