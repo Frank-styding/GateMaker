@@ -33,6 +33,8 @@ export class SelectionTool implements Tool {
   selectedNodes: NodeEntity[] = [];
   selectedWires: Wire[] = [];
   activeWires = new Map<string, Wire>();
+  bothSelectedWires: Set<Wire> = new Set();
+
   wireSelectionOnly = false;
   padding = 10;
 
@@ -45,6 +47,7 @@ export class SelectionTool implements Tool {
     this.selectedWires.length = 0;
     this.wireSelectionOnly = false;
     this.activeWires.clear();
+    this.bothSelectedWires.clear();
   }
 
   init(): void {
@@ -100,6 +103,7 @@ export class SelectionTool implements Tool {
     this.selectedNodes.length = 0;
     this.selectedWires.length = 0;
     this.activeWires.clear();
+    this.bothSelectedWires.clear();
 
     for (const e of this.out) {
       if (e instanceof NodeEntity) {
@@ -117,6 +121,13 @@ export class SelectionTool implements Tool {
         }
       }
     }
+
+    const nodeSet = new Set(this.selectedNodes);
+    for (const wire of this.selectedWires) {
+      if (nodeSet.has(wire.startNode) && nodeSet.has(wire.endNode)) {
+        this.bothSelectedWires.add(wire);
+      }
+    }
   }
 
   // ---------------- DRAG ----------------
@@ -126,6 +137,7 @@ export class SelectionTool implements Tool {
     if (this.wireSelectionOnly) {
       if (this.wireSelectionOnly) {
         AppEvents.emit("changeTool", { name: "edit_wire" });
+        AppEvents.get("tools")?.current?.onDown?.(e, this.out[0]);
         return;
       }
 
@@ -148,16 +160,21 @@ export class SelectionTool implements Tool {
     const dy = v.y - this.lastMouse.y;
     if (dx === 0 && dy === 0) return;
 
+    for (const wire of this.bothSelectedWires) {
+      wire.translate(dx, dy);
+    }
+
     for (const node of this.selectedNodes) {
       node.pos.x += dx;
       node.pos.y += dy;
       node.markDirty();
     }
 
-    for (const wire of this.activeWires) {
-      //wire[1].fastUpdate();
-      //wire[1].hide = true;
-      wire[1].refreshPathLayout();
+    for (const wire of this.activeWires.values()) {
+      if (!this.bothSelectedWires.has(wire)) {
+        wire.updateLastSegments();
+        wire.fixDiagonalSegments();
+      }
     }
 
     this.box.pos.x += dx;
@@ -175,9 +192,10 @@ export class SelectionTool implements Tool {
         node.forceLayoutUpdate();
         this.grid.registerEntity?.(node);
       }
-      /* for (const item of this.activeWires) {
-        item[1].hide = false;
-      } */
+      for (const item of this.activeWires) {
+        item[1].adjustPathToGrid();
+        item[1].updateLastSegments();
+      }
       this.activeWires.clear();
       this.box.set(Entity.calcBounding(this.out));
       this.box.addPadding(this.padding);
@@ -187,7 +205,7 @@ export class SelectionTool implements Tool {
     if (!this.draggingSelection) {
       this.out.length = 0;
       Entity.collect(this.root, this.out, (item) =>
-        this.box.containsAABB(item.getAABB())
+        this.box.containsAABB(item.getAABB()),
       );
 
       if (this.out.length === 0) {
@@ -217,7 +235,7 @@ export class SelectionTool implements Tool {
         pos.x - width / 2 - padding,
         pos.y - height / 2 - padding,
         width + padding * 2,
-        height + padding * 2
+        height + padding * 2,
       );
       ctx.restore();
     } else {

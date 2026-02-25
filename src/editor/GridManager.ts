@@ -1,6 +1,6 @@
 import { type Entity, Vector2D } from "../core";
 import { NodeEntity } from "../Entities/NodeEntity";
-import type { Wire } from "../Entities/Wire";
+import type { Wire } from "../Entities/wire/Wire";
 import { fastFloor, hashPos } from "./utils";
 
 export class GridManager {

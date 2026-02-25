@@ -7,7 +7,7 @@ import {
 } from "../core";
 import { AppEvents } from "../editor/Events";
 import { GridManager } from "../editor/GridManager";
-import type { Wire } from "./Wire";
+import type { Wire } from "./wire/Wire";
 
 export type NodeDirection = "left" | "top" | "right" | "bottom";
 

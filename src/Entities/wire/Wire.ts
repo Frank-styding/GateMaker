@@ -4,6 +4,7 @@ import { AppEvents } from "../../editor/Events";
 import { GridManager } from "../../editor/GridManager";
 import { WireRouter } from "./WireRouter";
 import type { NodeEntity } from "../NodeEntity";
+import { mouseInsideLine } from "../../core/colliders/mosueInsidePath";
 
 export class Wire extends Entity {
   static LINE_HEIGHT: number = 12;
@@ -54,6 +55,36 @@ export class Wire extends Entity {
     this.bounding.pos.set((maxX + minX) / 2, (maxY + minY) / 2);
   }
 
+  public translate(dx: number, dy: number) {
+    for (let i = 1; i < this.points.length - 1; i++) {
+      const p = this.points[i];
+      p.x += dx;
+      p.y += dy;
+    }
+    for (let i = 1; i < this.path.length - 1; i++) {
+      const p = this.path[i];
+      p.x += dx;
+      p.y += dy;
+    }
+    const grid = AppEvents.get("grid") as GridManager;
+    if (grid) {
+      grid.unregisterWire(this);
+      grid.registerWirePath(this, this.path);
+    }
+    this.markDirty();
+  }
+
+  public adjustPathToGrid() {
+    for (let i = 1; i < this.points.length - 1; i++) {
+      const p = this.points[i];
+      Wire.adjustPosVector(p);
+    }
+    for (let i = 1; i < this.path.length - 1; i++) {
+      const p = this.path[i];
+      Wire.adjustPosVector(p);
+    }
+  }
+
   public startWire(node: NodeEntity, name: string, pos: Vector2D) {
     this.startNode = node;
     this.startPin = name;
@@ -73,6 +104,7 @@ export class Wire extends Entity {
     this.path.push(this.endPos);
     this.completed = true;
     this.recalc();
+    this.points.length = 0;
   }
 
   public addPoint(pos: Vector2D) {
@@ -84,13 +116,83 @@ export class Wire extends Entity {
   }
 
   public moveLastPoint(pos: Vector2D) {
-    GridManager.snap(pos);
-    pos.x += GridManager.CELL_SIZE / 2;
-    pos.y += GridManager.CELL_SIZE / 2;
     this.endPos.set(pos);
   }
 
-  protected updateCollider(): void {}
+  public updateLastSegments() {
+    if (this.path.length <= 2) return;
+    const a = this.path[this.path.length - 2];
+    const b = this.path[1];
+
+    if (this.endPos.y !== a.y) {
+      a.y = this.endPos.y;
+    }
+
+    if (this.startPos.y != b.y) {
+      b.y = this.startPos.y;
+    }
+  }
+
+  public fixDiagonalSegments() {
+    for (let i = 0; i < this.path.length - 1; i++) {
+      const a = this.path[i];
+      const b = this.path[i + 1];
+      if (a.x === b.x || a.y === b.y) continue;
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+      let p1: Vector2D;
+      let p2: Vector2D;
+      if (dx > dy) {
+        p1 = new Vector2D(midX, a.y);
+        p2 = new Vector2D(midX, b.y);
+      } else {
+        p1 = new Vector2D(a.x, midY);
+        p2 = new Vector2D(b.x, midY);
+      }
+      this.path.splice(i + 1, 0, p1, p2);
+      i += 2;
+    }
+  }
+
+  public getSegment(pos: Vector2D) {
+    for (let i = 0; i < this.path.length - 1; i++) {
+      const a = this.path[i];
+      const b = this.path[i + 1];
+      if (mouseInsideLine(a, b, pos, Wire.LINE_HEIGHT)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public moveSegment(idx: number, delta: Vector2D) {
+    if (1 > idx || idx > this.path.length - 1) return;
+    const a = this.path[idx];
+    const b = this.path[idx + 1];
+
+    if (a.x == b.x) {
+      const d = new Vector2D(delta.x, 0);
+      a.add(d);
+      b.add(d);
+    }
+
+    if (a.y == b.y) {
+      const d = new Vector2D(0, delta.y);
+      a.add(d);
+      b.add(d);
+    }
+    this.forceLayoutUpdate();
+  }
+
+  public adjustSegment(idx: number) {
+    if (1 > idx || idx > this.path.length - 1) return;
+    Wire.adjustPosVector(this.path[idx]);
+    Wire.adjustPosVector(this.path[idx + 1]);
+    this.forceLayoutUpdate();
+  }
+
   protected render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.beginPath();
@@ -120,14 +222,6 @@ export class Wire extends Entity {
     ctx.restore();
   }
 
-  static adjustPos(p: Vector2D) {
-    const cellSize = GridManager.CELL_SIZE;
-    p.y = Math.floor(p.y / cellSize) * cellSize;
-    p.x = Math.floor(p.x / cellSize) * cellSize;
-    p.x += cellSize / 2;
-    p.y += cellSize / 2;
-  }
-
   public delete() {
     this.startNode.deleteWire(this.startPin);
     this.endNode.deleteWire(this.endPin);
@@ -140,75 +234,20 @@ export class Wire extends Entity {
     return [this.startNode, this.endNode];
   }
 
-  /**
-   * Ajusta los codos iniciales y finales para mantener ángulos de 90 grados
-   * conectando perfectamente la posición libre del nodo con la red ajustada a la grid.
-   */
-  public refreshPathLayout() {
-    const n = this.path.length;
-    // Se necesitan al menos 3 puntos (Start -> Codo -> End) para tener geometría ajustable
-    if (n < 3) {
-      this.updateBounding();
-      return;
-    }
-
-    // --- AJUSTE DEL INICIO (Start -> P1 -> P2) ---
-    const start = this.path[0]; // Nodo (posición libre)
-    const p1 = this.path[1]; // Primer codo (debe ser el puente)
-    const p2 = this.path[2]; // Siguiente punto (ya alineado a la grid)
-
-    // Determinamos la orientación del segmento "interno" (P1 -> P2)
-    // Comparamos distancias para ver si es más vertical u horizontal
-    const startSegIsVertical = Math.abs(p1.x - p2.x) < Math.abs(p1.y - p2.y);
-
-    if (startSegIsVertical) {
-      // Si el cable baja/sube hacia la grid (Vertical):
-      // El tramo Start -> P1 debe ser HORIZONTAL.
-      p1.y = start.y; // Altura igual al nodo
-      p1.x = p2.x; // X igual al cable de la grid (alineación estricta)
-    } else {
-      // Si el cable va hacia los lados (Horizontal):
-      // El tramo Start -> P1 debe ser VERTICAL.
-      p1.x = start.x; // X igual al nodo
-      p1.y = p2.y; // Altura igual al cable de la grid (alineación estricta)
-    }
-
-    // --- AJUSTE DEL FINAL (Pn-2 -> Pn-1 -> End) ---
-    // Solo si hay suficientes puntos para que el inicio y el final no sean el mismo codo
-    // o para manejar el recálculo independiente si n=3.
-    if (n >= 3) {
-      const end = this.path[n - 1]; // Nodo destino (posición libre)
-      const pn1 = this.path[n - 2]; // Último codo (puente)
-      const pn2 = this.path[n - 3]; // Punto anterior (alineado a la grid)
-
-      const endSegIsVertical =
-        Math.abs(pn1.x - pn2.x) < Math.abs(pn1.y - pn2.y);
-
-      if (endSegIsVertical) {
-        // Si viene vertical desde la grid:
-        // El tramo Pn1 -> End debe ser HORIZONTAL.
-        pn1.y = end.y; // Altura igual al nodo final
-        pn1.x = pn2.x; // X igual al cable anterior
-      } else {
-        // Si viene horizontal desde la grid:
-        // El tramo Pn1 -> End debe ser VERTICAL.
-        pn1.x = end.x; // X igual al nodo final
-        pn1.y = pn2.y; // Altura igual al cable anterior
-      }
-    }
-
-    this.updateBounding();
-  }
   public recalc() {
     const grid = AppEvents.get("grid")!;
     grid.unregisterWire(this);
+    if (this.points.length == 0) {
+      this.points.push(this.startPos);
+      this.points.push(this.endPos);
+    }
 
-    const userPoints: Vector2D[] = this.points.map((p) => p.clone());
+    /*     const userPoints: Vector2D[] = this.points.map((p) => p); */
     let fullPath: Vector2D[] = [];
 
-    for (let i = 0; i < userPoints.length - 1; i++) {
-      const from = userPoints[i];
-      const to = userPoints[i + 1];
+    for (let i = 0; i < this.points.length - 1; i++) {
+      const from = this.points[i];
+      const to = this.points[i + 1];
 
       // Dirección inicial solo en el primer tramo
       let startDir: Vector2D | undefined;
@@ -218,11 +257,11 @@ export class Wire extends Entity {
 
       // Dirección final solo en el último tramo
       let endDir: Vector2D | undefined;
-      if (i === userPoints.length - 2) {
+      if (i === this.points.length - 2) {
         endDir = new Vector2D(to.x < this.endNode.pos.x ? -1 : 1, 0);
       }
 
-      const segment = WireRouter.route(grid, from, to, startDir, endDir, this);
+      const segment = WireRouter.route(grid, from, to, startDir, this);
 
       if (segment.length === 0) continue;
 
@@ -233,14 +272,27 @@ export class Wire extends Entity {
     }
 
     if (fullPath.length === 0) {
-      fullPath = userPoints;
+      fullPath = this.points;
     }
     grid.registerWirePath(this, fullPath);
+    fullPath.unshift(this.startPos);
+    fullPath.push(this.endPos);
     const simplified = WireRouter.simplifyPath(fullPath);
     this.path.length = 0;
-    this.path.push(this.startPos);
     for (const p of simplified) this.path.push(p);
-    this.path.push(this.endPos);
     this.markDirty();
+  }
+
+  static adjustPosVector(p: Vector2D) {
+    const cellSize = GridManager.CELL_SIZE;
+    p.y = Math.floor(p.y / cellSize) * cellSize;
+    p.x = Math.floor(p.x / cellSize) * cellSize;
+    p.x += cellSize / 2;
+    p.y += cellSize / 2;
+  }
+
+  static adjustValue(x: number) {
+    const cellSize = GridManager.CELL_SIZE;
+    return Math.floor(x / cellSize) * cellSize + cellSize / 2;
   }
 }

@@ -55,10 +55,7 @@ export class ToolManager {
     AppEvents.send("tools", () => this);
     AppEvents.on("unLockTool", () => this.restore());
     AppEvents.on("resetTool", () => this.current?.reset?.());
-    AppEvents.on("changeTool", ({ name }) => {
-      this.use(name);
-      debugger;
-    });
+    AppEvents.on("changeTool", ({ name }) => this.use(name));
 
     this.mouse = new MouseController(this.display.getCanvas());
     this.initTools();
@@ -127,7 +124,7 @@ export class ToolManager {
       return { hit: item[0], testResult: item[0].hitTest(pos)! };
     }
     Entity.collect(this.root, this.hits, (ent) =>
-      ent.getAABB().mouseIsInside(pos)
+      ent.getAABB().mouseIsInside(pos),
     );
     this.hits.sort((a, b) => b.layerIdx - a.layerIdx);
 

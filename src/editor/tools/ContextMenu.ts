@@ -1,6 +1,6 @@
 import { type MouseData, type Entity, MouseButton } from "../../core";
 import type { NodeEntity } from "../../Entities/NodeEntity";
-import type { Wire } from "../../Entities/Wire";
+import type { Wire } from "../../Entities/wire/Wire";
 import type { ContextMenuOption } from "../ContextMenu";
 import { AppEvents } from "../Events";
 import type { SelectionTool } from "./SelectionTool";

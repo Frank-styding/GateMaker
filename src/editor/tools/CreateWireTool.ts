@@ -35,13 +35,12 @@ export class CreateWireTool implements Tool {
             wire.startWire(node, connector.name!, pos);
             this.current = wire;
           } else {
+            if (this.current.startNode.id == node.id) return;
             this.current.endWire(node, connector.name!, pos);
             this.root.addChild(this.current);
-            //this.current.recalc(this.grid);
             this.current.forceLayoutUpdate();
             this.current = null;
             AppEvents.emit("unLockTool");
-            //this.unLock();
           }
         }
       } else {
