@@ -1,12 +1,9 @@
 import type { Vector2D } from "../Vector";
 import type { Collider } from "./Collider";
-import { mosueInsidePath } from "./mosueInsidePath";
+import { mouseInsidePath } from "./mosueInsidePath";
 
 export class LineCollider implements Collider {
-  constructor(
-    public path: Vector2D[] = [],
-    public height: number,
-  ) {}
+  constructor(public path: Vector2D[] = [], public height: number) {}
   draw(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.beginPath();
@@ -27,6 +24,6 @@ export class LineCollider implements Collider {
   }
 
   mouseIsInside(pos: Vector2D): boolean {
-    return mosueInsidePath(pos, this.path, this.height);
+    return mouseInsidePath(pos, this.path, this.height);
   }
 }

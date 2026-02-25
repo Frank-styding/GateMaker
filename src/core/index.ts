@@ -7,7 +7,7 @@ export { RenderLayer } from "./RenderLayer";
 export { MouseButton, type MouseData } from "./MouseController";
 export { BoxCollider } from "./colliders/BoxCollider";
 export { LineCollider } from "./colliders/LineCollider";
-export { mosueInsidePath } from "./colliders/mosueInsidePath";
+export { mouseInsidePath as mosueInsidePath } from "./colliders/mosueInsidePath";
 export { mouseInsideBox } from "./colliders/mouseInsideBox";
 export { mouseIsInsideCircle } from "./colliders/mouseIsInsideCircle";
 export { uuid, createImageFromCanvas } from "./utils";
