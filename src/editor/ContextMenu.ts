@@ -1,6 +1,6 @@
 import { $ } from "../core/Element";
 import type { NodeEntity } from "../Entities/NodeEntity";
-import type { Wire } from "../Entities/Wire";
+import type { Wire } from "../Entities/wire/Wire";
 import { AppEvents } from "./Events";
 
 export type ContextMenuOption = {
@@ -70,7 +70,7 @@ export class ContextMenu {
           },
         },
       },
-      [$("span", { innerHTML: optionData.name })],
+      [$("span", { innerHTML: optionData.name })]
     );
   }
 

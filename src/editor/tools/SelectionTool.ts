@@ -7,7 +7,7 @@ import {
 } from "../../core";
 import { AABB } from "../../core/AABB";
 import { NodeEntity } from "../../Entities/NodeEntity";
-import { Wire } from "../../Entities/Wire";
+import { Wire } from "../../Entities/wire/Wire";
 import { AppEvents } from "../Events";
 import { GridManager } from "../GridManager";
 import type { Tool } from "./ToolManager";
@@ -34,6 +34,7 @@ export class SelectionTool implements Tool {
   selectedWires: Wire[] = [];
   activeWires = new Map<string, Wire>();
   wireSelectionOnly = false;
+  padding = 10;
 
   reset(): void {
     this.active = false;
@@ -59,9 +60,7 @@ export class SelectionTool implements Tool {
 
   // ---------------- MOUSE DOWN ----------------
   onDown(e: MouseData, hit?: Entity): void {
-    //if (e.button != MouseButton.LEFT) return;
     const v = this.display.screenToWorldVector(e);
-
     if (this.active && this.box.mouseIsInside(v) && !this.isWire) {
       this.draggingSelection = true;
       this.lastMouse.set(v);
@@ -73,6 +72,7 @@ export class SelectionTool implements Tool {
       this.out.length = 0;
       this.out.push(hit);
       this.box.set(hit.getAABB());
+      this.box.addPadding(this.padding);
       this.active = true;
 
       this.isWire = hit instanceof Wire;
@@ -124,6 +124,11 @@ export class SelectionTool implements Tool {
     if (e.button !== MouseButton.LEFT) return;
     const v = this.display.screenToWorldVector(e);
     if (this.wireSelectionOnly) {
+      if (this.wireSelectionOnly) {
+        AppEvents.emit("changeTool", { name: "edit_wire" });
+        return;
+      }
+
       this.wireSelectionOnly = false;
       this.active = false;
       this.draggingSelection = false;
@@ -149,6 +154,12 @@ export class SelectionTool implements Tool {
       node.markDirty();
     }
 
+    for (const wire of this.activeWires) {
+      //wire[1].fastUpdate();
+      //wire[1].hide = true;
+      wire[1].refreshPathLayout();
+    }
+
     this.box.pos.x += dx;
     this.box.pos.y += dy;
     this.lastMouse.set(v);
@@ -162,22 +173,21 @@ export class SelectionTool implements Tool {
         GridManager.snap(node.pos);
         NodeEntity.adjustPos(node);
         node.forceLayoutUpdate();
+        this.grid.registerEntity?.(node);
       }
-
-      // Register nodes
-      this.selectedNodes.forEach((item) => {
-        this.grid.registerEntity?.(item);
-      });
-
+      /* for (const item of this.activeWires) {
+        item[1].hide = false;
+      } */
       this.activeWires.clear();
       this.box.set(Entity.calcBounding(this.out));
+      this.box.addPadding(this.padding);
     }
 
     // Selection finalize
     if (!this.draggingSelection) {
       this.out.length = 0;
       Entity.collect(this.root, this.out, (item) =>
-        this.box.containsAABB(item.getAABB()),
+        this.box.containsAABB(item.getAABB())
       );
 
       if (this.out.length === 0) {
@@ -187,6 +197,7 @@ export class SelectionTool implements Tool {
       } else {
         this.active = true;
         this.box.set(Entity.calcBounding(this.out));
+        this.box.addPadding(this.padding);
       }
     }
 
@@ -195,20 +206,18 @@ export class SelectionTool implements Tool {
 
   // ---------------- RENDER ----------------
   render(ctx: CanvasRenderingContext2D): void {
-    if (!this.box) return;
     const { pos, width, height } = this.box;
-    //if (this.wireSelectionOnly) return;
     if (this.active || this.wireSelectionOnly) {
       ctx.save();
       ctx.setLineDash([6, 3]);
       ctx.lineWidth = 2;
       ctx.strokeStyle = "black";
-      const padding = 10;
+      const padding = 0;
       ctx.strokeRect(
         pos.x - width / 2 - padding,
         pos.y - height / 2 - padding,
         width + padding * 2,
-        height + padding * 2,
+        height + padding * 2
       );
       ctx.restore();
     } else {

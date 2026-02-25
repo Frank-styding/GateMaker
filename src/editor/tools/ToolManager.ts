@@ -13,17 +13,19 @@ import {
 } from "../../core/MouseController";
 import { NodeEntity } from "../../Entities/NodeEntity";
 import { CameraTool } from "./CameraTool";
-import { WireTool } from "./WireTool";
+import { CreateWireTool } from "./CreateWireTool";
 import { SelectionTool } from "./SelectionTool";
-import { Wire } from "../../Entities/Wire";
+import { Wire } from "../../Entities/wire/Wire";
 import type { GridManager } from "../GridManager";
 import { ContextMenuTool } from "./ContextMenu";
 import { AppEvents } from "../Events";
+import { EditWireTool } from "./EditWireTool";
 
 export interface Tool {
   lock: boolean;
   name: string;
   init?(): void;
+  load?(): void;
   onDown?(e: MouseData, hits?: Entity): void;
   onDrag?(e: MouseData): void;
   onUp?(e: MouseData): void;
@@ -52,6 +54,11 @@ export class ToolManager {
 
     AppEvents.send("tools", () => this);
     AppEvents.on("unLockTool", () => this.restore());
+    AppEvents.on("resetTool", () => this.current?.reset?.());
+    AppEvents.on("changeTool", ({ name }) => {
+      this.use(name);
+      debugger;
+    });
 
     this.mouse = new MouseController(this.display.getCanvas());
     this.initTools();
@@ -60,9 +67,10 @@ export class ToolManager {
 
   initTools() {
     this.register(new CameraTool());
-    this.register(new WireTool());
+    this.register(new CreateWireTool());
     this.register(new SelectionTool());
     this.register(new ContextMenuTool());
+    this.register(new EditWireTool());
   }
 
   register(tool: Tool) {
@@ -71,9 +79,10 @@ export class ToolManager {
   }
 
   use(name: string) {
-    this.current?.reset?.();
+    //this.current?.reset?.();
     this.prev = this.current;
     this.current = this.tools.get(name) ?? null;
+    this.current?.load?.();
   }
 
   restore() {
@@ -92,7 +101,7 @@ export class ToolManager {
           return;
         }
         if (hitNode?.type == "connector") {
-          this.use("wire");
+          this.use("create_wire");
         }
       }
       if (hit instanceof Wire) {
@@ -118,7 +127,7 @@ export class ToolManager {
       return { hit: item[0], testResult: item[0].hitTest(pos)! };
     }
     Entity.collect(this.root, this.hits, (ent) =>
-      ent.getAABB().mouseIsInside(pos),
+      ent.getAABB().mouseIsInside(pos)
     );
     this.hits.sort((a, b) => b.layerIdx - a.layerIdx);
 
@@ -138,16 +147,20 @@ export class ToolManager {
       const we = this.display.screenToWorld(e);
       const { hit, testResult } = this.getHit(new Vector2D(we));
       AppEvents.emit("closeNodeCatalog");
+      AppEvents.emit("closeContextMenu");
       if (hit && testResult!.areaFlags & HitFlags.CLICK) {
-        AppEvents.emit("closeContextMenu");
         hit._mouseClick(new Vector2D(we));
         this.activeInteracitveEntity = hit;
         this.restore();
         return;
       }
+
       this.autoSelectTool(hit, we);
       this.current?.onDown?.(e, hit);
-      this.tools.get("context_menu")?.onDown?.(e);
+
+      if (this.prev?.name !== "create_wire") {
+        this.tools.get("context_menu")?.onDown?.(e);
+      }
     });
     this.mouse.on(MouseEventType.DRAG, (e) => {
       this.tools.get("camera")?.onDrag?.(e);

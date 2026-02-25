@@ -1,8 +1,8 @@
 // WireRouter.ts
-import { Vector2D } from "../core";
-import type { Wire } from "../Entities/Wire";
-import { GridManager } from "./GridManager";
-import { hashPos } from "./utils";
+import { Vector2D } from "../../core";
+import { GridManager } from "../../editor/GridManager";
+import { hashPos } from "../../editor/utils";
+import type { Wire } from "./Wire";
 
 type Node = {
   x: number;
@@ -39,7 +39,7 @@ export class WireRouter {
     b: Vector2D,
     startDir?: Vector2D,
     endDir?: Vector2D,
-    currentWire?: Wire,
+    currentWire?: Wire
   ): Vector2D[] {
     const start = grid.worldToGrid(a);
     const end = grid.worldToGrid(b);
@@ -120,7 +120,7 @@ export class WireRouter {
         gScore.set(key, tentativeG);
         const h = this.heuristic(
           { x: nx, y: ny } as Node,
-          { x: end.x, y: end.y } as Node,
+          { x: end.x, y: end.y } as Node
         );
 
         open.push({

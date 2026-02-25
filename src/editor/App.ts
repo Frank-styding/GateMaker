@@ -36,6 +36,7 @@ export class App extends Engine {
     AppEvents.on("on_context_delete", ({ wires, nodes }) => {
       nodes.forEach((node) => node.delete());
       wires.forEach((wire) => wire.delete());
+      AppEvents.emit("resetTool");
       AppEvents.emit("unLockTool");
     });
 

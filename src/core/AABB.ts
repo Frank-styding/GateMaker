@@ -4,7 +4,7 @@ export class AABB {
   constructor(
     public width: number = 0,
     public height: number = 0,
-    public pos: Vector2D = new Vector2D(), // top-left corner
+    public pos: Vector2D = new Vector2D() // top-left corner
   ) {}
 
   setData(width: number, height: number, pos: Vector2D) {
@@ -15,6 +15,11 @@ export class AABB {
 
   set(a: AABB) {
     this.setData(a.width, a.height, a.pos);
+  }
+
+  addPadding(padding: number) {
+    this.width += padding * 2;
+    this.height += padding * 2;
   }
 
   get left() {

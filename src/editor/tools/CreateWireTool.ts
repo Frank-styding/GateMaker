@@ -6,12 +6,12 @@ import {
   MouseButton,
 } from "../../core";
 import { NodeEntity } from "../../Entities/NodeEntity";
-import { Wire } from "../../Entities/Wire";
+import { Wire } from "../../Entities/wire/Wire";
 import { AppEvents } from "../Events";
 import type { Tool } from "./ToolManager";
 
-export class WireTool implements Tool {
-  name = "wire";
+export class CreateWireTool implements Tool {
+  name = "create_wire";
   lock: boolean = true;
   current: Wire | null = null;
   display!: RenderLayer;

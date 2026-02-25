@@ -1,8 +1,9 @@
-import { Entity, LineCollider, Vector2D } from "../core";
-import { AppEvents } from "../editor/Events";
-import { GridManager } from "../editor/GridManager";
-import { WireRouter } from "../editor/WireRouter";
-import type { NodeEntity } from "./NodeEntity";
+// Wire.ts
+import { Entity, LineCollider, Vector2D } from "../../core";
+import { AppEvents } from "../../editor/Events";
+import { GridManager } from "../../editor/GridManager";
+import { WireRouter } from "./WireRouter";
+import type { NodeEntity } from "../NodeEntity";
 
 export class Wire extends Entity {
   static LINE_HEIGHT: number = 12;
@@ -83,6 +84,9 @@ export class Wire extends Entity {
   }
 
   public moveLastPoint(pos: Vector2D) {
+    GridManager.snap(pos);
+    pos.x += GridManager.CELL_SIZE / 2;
+    pos.y += GridManager.CELL_SIZE / 2;
     this.endPos.set(pos);
   }
 
@@ -136,6 +140,65 @@ export class Wire extends Entity {
     return [this.startNode, this.endNode];
   }
 
+  /**
+   * Ajusta los codos iniciales y finales para mantener ángulos de 90 grados
+   * conectando perfectamente la posición libre del nodo con la red ajustada a la grid.
+   */
+  public refreshPathLayout() {
+    const n = this.path.length;
+    // Se necesitan al menos 3 puntos (Start -> Codo -> End) para tener geometría ajustable
+    if (n < 3) {
+      this.updateBounding();
+      return;
+    }
+
+    // --- AJUSTE DEL INICIO (Start -> P1 -> P2) ---
+    const start = this.path[0]; // Nodo (posición libre)
+    const p1 = this.path[1]; // Primer codo (debe ser el puente)
+    const p2 = this.path[2]; // Siguiente punto (ya alineado a la grid)
+
+    // Determinamos la orientación del segmento "interno" (P1 -> P2)
+    // Comparamos distancias para ver si es más vertical u horizontal
+    const startSegIsVertical = Math.abs(p1.x - p2.x) < Math.abs(p1.y - p2.y);
+
+    if (startSegIsVertical) {
+      // Si el cable baja/sube hacia la grid (Vertical):
+      // El tramo Start -> P1 debe ser HORIZONTAL.
+      p1.y = start.y; // Altura igual al nodo
+      p1.x = p2.x; // X igual al cable de la grid (alineación estricta)
+    } else {
+      // Si el cable va hacia los lados (Horizontal):
+      // El tramo Start -> P1 debe ser VERTICAL.
+      p1.x = start.x; // X igual al nodo
+      p1.y = p2.y; // Altura igual al cable de la grid (alineación estricta)
+    }
+
+    // --- AJUSTE DEL FINAL (Pn-2 -> Pn-1 -> End) ---
+    // Solo si hay suficientes puntos para que el inicio y el final no sean el mismo codo
+    // o para manejar el recálculo independiente si n=3.
+    if (n >= 3) {
+      const end = this.path[n - 1]; // Nodo destino (posición libre)
+      const pn1 = this.path[n - 2]; // Último codo (puente)
+      const pn2 = this.path[n - 3]; // Punto anterior (alineado a la grid)
+
+      const endSegIsVertical =
+        Math.abs(pn1.x - pn2.x) < Math.abs(pn1.y - pn2.y);
+
+      if (endSegIsVertical) {
+        // Si viene vertical desde la grid:
+        // El tramo Pn1 -> End debe ser HORIZONTAL.
+        pn1.y = end.y; // Altura igual al nodo final
+        pn1.x = pn2.x; // X igual al cable anterior
+      } else {
+        // Si viene horizontal desde la grid:
+        // El tramo Pn1 -> End debe ser VERTICAL.
+        pn1.x = end.x; // X igual al nodo final
+        pn1.y = pn2.y; // Altura igual al cable anterior
+      }
+    }
+
+    this.updateBounding();
+  }
   public recalc() {
     const grid = AppEvents.get("grid")!;
     grid.unregisterWire(this);
