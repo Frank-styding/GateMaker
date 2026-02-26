@@ -3,8 +3,9 @@ import { AndNode } from "../Entities/gates/AndNode";
 import { NotNode } from "../Entities/gates/NotNode";
 import { OrNode } from "../Entities/gates/OrNode";
 import { ButtonNode } from "../Entities/inputs_outputs/ButtonNode";
+import { LedNode } from "../Entities/inputs_outputs/LedNode";
 import { SwitchNode } from "../Entities/inputs_outputs/SwitchNode";
-import { NodeEntity } from "../Entities/NodeEntity";
+import { NodeEntity, NodeType } from "../Entities/NodeEntity";
 import { ContextMenu } from "./ContextMenu";
 import { AppEvents } from "./Events";
 import { GridManager } from "./GridManager";
@@ -70,6 +71,7 @@ export class App extends Engine {
     const e = new OrNode();
     const f = new ButtonNode();
     const g = new SwitchNode();
+    const h = new LedNode();
 
     a.pos.add(new Vector2D(300, 50));
     b.pos.add(new Vector2D(300, -150));
@@ -77,6 +79,8 @@ export class App extends Engine {
     d.pos.add(new Vector2D(0, 150));
     f.pos.add(new Vector2D(400, 400));
     g.pos.add(new Vector2D(450, 0));
+    g.pos.add(new Vector2D(450, 0));
+    h.pos.add(new Vector2D(500, 0));
 
     this.root.addChild(a);
     this.root.addChild(b);
@@ -85,6 +89,7 @@ export class App extends Engine {
     this.root.addChild(e);
     this.root.addChild(f);
     this.root.addChild(g);
+    this.root.addChild(h);
   }
 
   protected onInitEntity(e: Entity): void {
@@ -104,7 +109,51 @@ export class App extends Engine {
   protected render(ctx: CanvasRenderingContext2D): void {
     this.display.drawGrid();
   }
+
   protected renderAfter(ctx: CanvasRenderingContext2D): void {
     this.tools.renderTools(ctx);
+  }
+
+  test() {
+    const memory = new Map<string, { node: NodeEntity; idx: number }>();
+    const pathMemory = new Map<string, NodeEntity>();
+    const list: NodeEntity[] = [];
+
+    const startedNodes = this.root
+      .getChildren()
+      .filter(
+        (item) =>
+          item instanceof NodeEntity && item.config.type == NodeType.INPUT,
+      ) as NodeEntity[];
+
+    const traveler = (node: NodeEntity) => {
+      pathMemory.clear();
+      list.length = 0;
+      list.push(node);
+      let currentIdx = 0;
+      while (list.length > 0) {
+        const item = list.pop();
+        if (!item) continue;
+        if (pathMemory.has(item.id)) continue;
+        if (memory.has(item.id)) {
+          const idx = memory.get(item.id)?.idx!;
+          if (currentIdx < idx) {
+            memory.set(item.id, { node: item, idx: currentIdx });
+          }
+        } else {
+          memory.set(item.id, { node: item, idx: currentIdx });
+        }
+        currentIdx++;
+        pathMemory.set(item.id, item);
+        item.getNextNodes().forEach((item) => list.push(item));
+      }
+    };
+    startedNodes.forEach((node) => traveler(node));
+
+    setInterval(() => {
+      Array.from(memory)
+        .sort((a, b) => a[1].idx - b[1].idx)
+        .forEach((item) => item[1].node.updateState());
+    }, 200);
   }
 }

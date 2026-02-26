@@ -5,7 +5,7 @@ import {
   Vector2D,
   MouseButton,
 } from "../../core";
-import { NodeEntity } from "../../Entities/NodeEntity";
+import { ConnectorType, NodeEntity } from "../../Entities/NodeEntity";
 import { Wire } from "../../Entities/wire/Wire";
 import { AppEvents } from "../Events";
 import type { Tool } from "./ToolManager";
@@ -22,6 +22,18 @@ export class CreateWireTool implements Tool {
     this.display = AppEvents.get("display")!;
   }
 
+  validConector(
+    node: NodeEntity,
+    wire: Wire,
+    name: string,
+    connectorType: ConnectorType,
+  ) {
+    const nodeConector = wire.startNode.config.connectors.find(
+      ({ name }) => name == wire.startPin,
+    );
+    return nodeConector?.type != connectorType && node.isValidConnector(name);
+  }
+
   onDown(e: MouseData, hits?: Entity): void {
     const v = this.display.screenToWorldVector(e);
     if (e.button == MouseButton.LEFT) {
@@ -36,6 +48,15 @@ export class CreateWireTool implements Tool {
             this.current = wire;
           } else {
             if (this.current.startNode.id == node.id) return;
+            if (
+              !this.validConector(
+                node,
+                this.current,
+                connector.name!,
+                connector.connectorType!,
+              )
+            )
+              return;
             this.current.endWire(node, connector.name!, pos);
             this.root.addChild(this.current);
             this.current.forceLayoutUpdate();

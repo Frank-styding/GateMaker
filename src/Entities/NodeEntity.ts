@@ -11,10 +11,22 @@ import type { Wire } from "./wire/Wire";
 
 export type NodeDirection = "left" | "top" | "right" | "bottom";
 
+export enum ConnectorType {
+  INPUT,
+  OUTPUT,
+}
+
+export enum NodeType {
+  INPUT,
+  OUTPUT,
+  NODE,
+}
+
 export type NodeConnector = {
   name: string;
   direction: NodeDirection;
   idx: number;
+  type: ConnectorType;
 };
 
 export interface NodeConfig {
@@ -24,6 +36,7 @@ export interface NodeConfig {
   showLabel: boolean;
   connectors: NodeConnector[];
   showConnectorLabel: boolean;
+  type: NodeType;
 }
 
 function createNodeLayer({
@@ -143,7 +156,7 @@ export class NodeEntity extends Entity {
   public _lastCol?: number;
   public _lastRow?: number;
 
-  private wiresPos: Record<string, { wire: Wire; pos: Vector2D }[]> = {};
+  protected wires: Record<string, { wire: Wire; pos: Vector2D }[]> = {};
 
   constructor() {
     super();
@@ -169,7 +182,7 @@ export class NodeEntity extends Entity {
   }
 
   public deleteWire(startPin: string) {
-    delete this.wiresPos[startPin];
+    delete this.wires[startPin];
   }
 
   public delete() {
@@ -247,7 +260,13 @@ export class NodeEntity extends Entity {
           ? this.pos.y + this.height / 2 - cH / 2
           : this.pos.y - this.height / 2 + cH / 2;
 
-    return { type: "connector", x, y, name: item.name };
+    return {
+      type: "connector",
+      x,
+      y,
+      name: item.name,
+      connectorType: item.type,
+    };
   }
 
   public getConnectorPos(name: string) {
@@ -275,14 +294,14 @@ export class NodeEntity extends Entity {
   }
 
   public setWirePos(name: string, wire: Wire, pos: Vector2D) {
-    this.wiresPos[name] ??= [];
-    this.wiresPos[name].push({ wire, pos });
+    this.wires[name] ??= [];
+    this.wires[name].push({ wire, pos });
   }
 
   protected onDirty(): void {
-    for (const name in this.wiresPos) {
+    for (const name in this.wires) {
       const pos = this.getConnectorPos(name);
-      this.wiresPos[name].forEach((item) => {
+      this.wires[name].forEach((item) => {
         item.pos.set(pos);
         item.wire.markDirty();
       });
@@ -291,8 +310,8 @@ export class NodeEntity extends Entity {
 
   public getConnectedWires() {
     const wires: Wire[] = [];
-    for (const item in this.wiresPos) {
-      wires.push(...this.wiresPos[item].map((item) => item.wire));
+    for (const item in this.wires) {
+      wires.push(...this.wires[item].map((item) => item.wire));
     }
     return wires;
   }
@@ -312,5 +331,34 @@ export class NodeEntity extends Entity {
     );
     this.drawControls(ctx);
     ctx.restore();
+  }
+
+  public updateState() {}
+
+  public getNextNodes() {
+    const connectors = this.config.connectors;
+    const nodes: NodeEntity[] = [];
+    for (let i = 0; i < connectors.length; i++) {
+      const { type, name } = connectors[i];
+      if (
+        type == ConnectorType.OUTPUT &&
+        this.wires[name] &&
+        this.wires[name].length > 0
+      ) {
+        this.wires[name].forEach((item) => {
+          if (item.wire.startNode == this) {
+            nodes.push(item.wire.endNode);
+          } else {
+            nodes.push(item.wire.startNode);
+          }
+        });
+      }
+    }
+    return nodes;
+  }
+
+  public isValidConnector(name: string) {
+    if (!this.wires[name]) return true;
+    return this.wires[name].length == 0;
   }
 }

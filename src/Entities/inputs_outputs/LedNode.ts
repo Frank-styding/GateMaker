@@ -15,36 +15,42 @@ import {
   type NodeConfig,
 } from "../NodeEntity";
 
-function createActiveButtonLayer(size: number) {
-  return AssetsManager.registerAsset("BUTTON_ACTIVE", {
-    width: size,
-    height: size,
+function createActiveButtonLayer(radius: number) {
+  return AssetsManager.registerAsset("LED_ACTIVE", {
+    width: radius * 2,
+    height: radius * 2,
     builder: (ctx) => {
+      ctx.beginPath();
       ctx.fillStyle = "#F53C23";
-      ctx.fillRect(0, 0, size, size);
+      ctx.arc(radius, radius, radius - 2, 0, Math.PI * 2);
+      ctx.fill();
       ctx.strokeStyle = "black";
       ctx.lineWidth = 2;
-      ctx.strokeRect(0, 0, size, size);
+      ctx.arc(radius, radius, radius - 2, 0, Math.PI * 2);
+      ctx.stroke();
     },
   }) as HTMLCanvasElement;
 }
 
-function createDisableButtonLayer(size: number) {
-  return AssetsManager.registerAsset("BUTTON_DISABLE", {
-    width: size,
-    height: size,
+function createDisableButtonLayer(radius: number) {
+  return AssetsManager.registerAsset("LED_DISABLE", {
+    width: radius * 2,
+    height: radius * 2,
     builder: (ctx) => {
+      ctx.beginPath();
       ctx.fillStyle = "#F0EFEF";
-      ctx.fillRect(0, 0, size, size);
+      ctx.arc(radius, radius, radius - 2, 0, Math.PI * 2);
+      ctx.fill();
       ctx.strokeStyle = "black";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(0, 0, size, size);
+      ctx.lineWidth = 2;
+      ctx.arc(radius, radius, radius - 2, 0, Math.PI * 2);
+      ctx.stroke();
     },
   }) as HTMLCanvasElement;
 }
 
-export class ButtonNode extends NodeEntity {
-  static SIZE: number = 26;
+export class LedNode extends NodeEntity {
+  static RADIUS: number = 15;
 
   activeStateLayer!: HTMLCanvasElement;
   disableStateLayer!: HTMLCanvasElement;
@@ -59,16 +65,16 @@ export class ButtonNode extends NodeEntity {
     colSpan: 1,
     rowSpan: 1,
     connectors: [
-      { name: "A", direction: "right", idx: 0, type: ConnectorType.OUTPUT },
+      { name: "A", direction: "left", idx: 0, type: ConnectorType.INPUT },
     ],
-    nodeName: "BUTTON",
-    type: NodeType.INPUT,
+    nodeName: "LED",
+    type: NodeType.OUTPUT,
   };
 
   static initLayers(): void {
     super.initLayers();
-    this.LAYERS.push(createActiveButtonLayer(ButtonNode.SIZE));
-    this.LAYERS.push(createDisableButtonLayer(ButtonNode.SIZE));
+    this.LAYERS.push(createActiveButtonLayer(LedNode.RADIUS));
+    this.LAYERS.push(createDisableButtonLayer(LedNode.RADIUS));
   }
 
   static getPreview(): HTMLImageElement {
@@ -86,10 +92,10 @@ export class ButtonNode extends NodeEntity {
 
   constructor() {
     super();
-    this.config = ButtonNode.CONFIG!;
-    this.layer = ButtonNode.LAYERS[0];
-    this.activeStateLayer = ButtonNode.LAYERS[1];
-    this.disableStateLayer = ButtonNode.LAYERS[2];
+    this.config = LedNode.CONFIG!;
+    this.layer = LedNode.LAYERS[0];
+    this.activeStateLayer = LedNode.LAYERS[1];
+    this.disableStateLayer = LedNode.LAYERS[2];
   }
 
   protected init(): void {
@@ -98,18 +104,8 @@ export class ButtonNode extends NodeEntity {
 
   protected drawControls(ctx: CanvasRenderingContext2D): void {
     const layer = this.state ? this.activeStateLayer : this.disableStateLayer;
-    const size = ButtonNode.SIZE;
-    ctx.drawImage(layer, -size / 2, -size / 2, size, size);
-  }
-
-  public hitTest(pos: Vector2D): HitTestResult | null {
-    const size = ButtonNode.SIZE;
-
-    const result = super.hitTest(pos);
-    if (mouseInsideBox(this.pos, pos, size / 2, size / 2)) {
-      return { entity: this, areaFlags: HitFlags.CLICK | HitFlags.UP };
-    }
-    return result;
+    const size = LedNode.RADIUS;
+    ctx.drawImage(layer, -size, -size, size * 2, size * 2);
   }
 
   protected onMouseClick(): void {
@@ -122,10 +118,8 @@ export class ButtonNode extends NodeEntity {
 
   public updateState(): void {
     if (!this.wires["A"]) return;
-    this.wires["A"].forEach((item) => {
-      item.wire.state = this.state;
-    });
+    this.state = this.wires["A"][0].wire.state;
   }
 }
-ButtonNode.initLayers();
-NodeRecord.registerNode(ButtonNode);
+LedNode.initLayers();
+NodeRecord.registerNode(LedNode);

@@ -8,7 +8,12 @@ import {
 } from "../../core";
 import { NodeRecord } from "../../editor/NodeRecord";
 
-import { NodeEntity, type NodeConfig } from "../NodeEntity";
+import {
+  ConnectorType,
+  NodeEntity,
+  NodeType,
+  type NodeConfig,
+} from "../NodeEntity";
 
 function createActiveSwitchLayer(size: number) {
   return AssetsManager.registerAsset("SWITCH_ACTIVE", {
@@ -58,9 +63,12 @@ export class SwitchNode extends NodeEntity {
     showLabel: false,
     colSpan: 1,
     rowSpan: 1,
-    connectors: [{ name: "A", direction: "right", idx: 0 }],
+    connectors: [
+      { name: "A", direction: "right", idx: 0, type: ConnectorType.OUTPUT },
+    ],
     nodeName: "SWITCH",
     showConnectorLabel: false,
+    type: NodeType.INPUT,
   };
 
   static initLayers(): void {
@@ -115,6 +123,13 @@ export class SwitchNode extends NodeEntity {
   }
 
   protected onMouseUp(): void {}
+
+  public updateState(): void {
+    if (!this.wires["A"]) return;
+    this.wires["A"].forEach((item) => {
+      item.wire.state = this.state;
+    });
+  }
 }
 
 SwitchNode.initLayers();

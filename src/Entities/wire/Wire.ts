@@ -18,7 +18,9 @@ export class Wire extends Entity {
   public endPos: Vector2D;
   public path: Vector2D[];
   public points: Vector2D[];
-  _cells: number[] = [];
+  public _cells: number[] = [];
+
+  public state: boolean;
 
   completed: boolean;
   constructor() {
@@ -29,6 +31,7 @@ export class Wire extends Entity {
     this.startPos = new Vector2D();
     this.endPos = new Vector2D();
     this.completed = false;
+    this.state = false;
   }
 
   protected init(): void {
@@ -198,7 +201,7 @@ export class Wire extends Entity {
     ctx.beginPath();
     ctx.lineWidth = Wire.LINE_HEIGHT;
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "blue";
+    ctx.strokeStyle = "black";
 
     for (let i = 0; i < this.path.length; i++) {
       const p = this.path[i];
@@ -210,7 +213,7 @@ export class Wire extends Entity {
     ctx.beginPath();
     ctx.lineWidth = Wire.LINE_HEIGHT - 3;
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#FFFFFF";
+    ctx.strokeStyle = this.state ? "#D11414" : "#FFFFFF";
     for (let i = 0; i < this.path.length; i++) {
       const p = this.path[i];
       if (i == 0) ctx.moveTo(p.x, p.y);
@@ -242,7 +245,6 @@ export class Wire extends Entity {
       this.points.push(this.endPos);
     }
 
-    /*     const userPoints: Vector2D[] = this.points.map((p) => p); */
     let fullPath: Vector2D[] = [];
 
     for (let i = 0; i < this.points.length - 1; i++) {
